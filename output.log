@@ -1,0 +1,189 @@
+id,start_time,end_time,duration,window_id,window_class,window_title
+1,2018-03-27 11:49:34,2018-03-27 11:49:34,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+2,2018-03-27 11:49:34,2018-03-27 11:49:34,0,41943540,urxvt,i3-tracker-rs: cargo run
+3,2018-03-27 11:49:48,2018-03-27 11:49:48,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+4,2018-03-27 11:49:53,2018-03-27 11:49:53,0,48234497,code,time_tracker.rs - i3-tracker-rs - Visual Studio Code
+5,2018-03-27 11:50:12,2018-03-27 11:50:12,0,41943540,urxvt,i3-tracker-rs: cargo run
+6,2018-03-27 11:50:12,2018-03-27 11:50:12,0,48234497,code,time_tracker.rs - i3-tracker-rs - Visual Studio Code
+7,2018-03-27 11:50:26,2018-03-27 11:50:26,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+8,2018-03-27 11:50:32,2018-03-27 11:50:32,0,48234497,code,time_tracker.rs - i3-tracker-rs - Visual Studio Code
+9,2018-03-27 11:50:33,2018-03-27 11:50:33,0,29360144,Navigator,i3-tracker-rs/time_tracker.rs at master · danbruce/i3-tracker-rs - Mozilla Firefox
+10,2018-03-27 11:50:52,2018-03-27 11:50:52,0,48234497,code,time_tracker.rs - i3-tracker-rs - Visual Studio Code
+11,2018-03-27 11:50:52,2018-03-27 11:50:52,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+12,2018-03-27 11:51:18,2018-03-27 11:51:18,0,48234497,code,output.log - i3-tracker-rs - Visual Studio Code
+13,2018-03-27 11:51:21,2018-03-27 11:51:21,0,41943540,urxvt,i3-tracker-rs: cargo run
+14,2018-03-27 11:51:30,2018-03-27 11:51:30,0,48234497,code,output.log - i3-tracker-rs - Visual Studio Code
+15,2018-03-27 11:51:31,2018-03-27 11:51:31,0,41943540,urxvt,i3-tracker-rs: cargo run
+16,2018-03-27 11:57:14,2018-03-27 11:57:14,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+17,2018-03-27 11:57:15,2018-03-27 11:57:15,0,41943540,urxvt,i3-tracker-rs: cargo run
+18,2018-03-27 12:26:27,2018-03-27 12:26:27,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+19,2018-03-27 12:26:29,2018-03-27 12:26:29,0,48234497,code,output.log - i3-tracker-rs - Visual Studio Code
+20,2018-03-27 12:26:33,2018-03-27 12:26:33,0,41943540,urxvt,i3-tracker-rs: cargo run
+21,2018-03-27 12:26:34,2018-03-27 12:26:34,0,48234497,code,output.log - i3-tracker-rs - Visual Studio Code
+22,2018-03-27 12:26:36,2018-03-27 12:26:36,0,41943540,urxvt,i3-tracker-rs: cargo run
+27,2018-03-27 12:27:04,2018-03-27 12:27:04,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+28,2018-03-27 12:27:04,2018-03-27 12:27:05,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+29,2018-03-27 12:27:05,2018-03-27 12:27:05,0,41943540,urxvt,i3-tracker-rs: cargo run
+30,2018-03-27 12:27:05,2018-03-27 12:27:06,0,41943540,urxvt,i3-tracker-rs: cargo run
+31,2018-03-27 12:27:05,2018-03-27 12:27:07,1,41943540,urxvt,i3-tracker-rs: cargo run
+32,2018-03-27 12:27:08,2018-03-27 12:27:08,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+33,2018-03-27 12:27:08,2018-03-27 12:27:08,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+34,2018-03-27 12:27:08,2018-03-27 12:27:09,1,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+35,2018-03-27 12:27:10,2018-03-27 12:27:10,0,48234497,code,output.log - i3-tracker-rs - Visual Studio Code
+36,2018-03-27 12:27:10,2018-03-27 12:27:10,0,48234497,code,output.log - i3-tracker-rs - Visual Studio Code
+37,2018-03-27 12:27:11,2018-03-27 12:27:11,0,41943540,urxvt,i3-tracker-rs: cargo run
+38,2018-03-27 12:27:11,2018-03-27 12:27:11,0,41943540,urxvt,i3-tracker-rs: cargo run
+39,2018-03-27 12:27:11,2018-03-27 12:27:12,1,41943540,urxvt,i3-tracker-rs: cargo run
+40,2018-03-27 12:27:11,2018-03-27 12:27:13,2,41943540,urxvt,i3-tracker-rs: cargo run
+41,2018-03-27 12:27:11,2018-03-27 12:27:14,3,41943540,urxvt,i3-tracker-rs: cargo run
+42,2018-03-27 12:27:15,2018-03-27 12:27:15,0,48234497,code,output.log - i3-tracker-rs - Visual Studio Code
+43,2018-03-27 12:27:15,2018-03-27 12:27:15,0,48234497,code,output.log - i3-tracker-rs - Visual Studio Code
+44,2018-03-27 12:27:15,2018-03-27 12:27:15,0,41943540,urxvt,i3-tracker-rs: cargo run
+45,2018-03-27 12:27:15,2018-03-27 12:27:16,0,41943540,urxvt,i3-tracker-rs: cargo run
+46,2018-03-27 12:31:34,2018-03-27 12:31:34,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+47,2018-03-27 12:32:23,2018-03-27 12:32:23,0,48234497,code,● main.rs - i3-tracker-rs - Visual Studio Code
+48,2018-03-27 12:32:23,2018-03-27 12:32:25,1,48234497,code,● main.rs - i3-tracker-rs - Visual Studio Code
+49,2018-03-27 12:32:25,2018-03-27 12:32:25,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+50,2018-03-27 12:32:35,2018-03-27 12:32:35,0,48234497,code,● main.rs - i3-tracker-rs - Visual Studio Code
+51,2018-03-27 12:32:37,2018-03-27 12:32:37,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+52,2018-03-27 12:32:37,2018-03-27 12:32:37,0,41943540,urxvt,i3-tracker-rs: cargo run
+53,2018-03-27 13:25:33,2018-03-27 13:25:33,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+54,2018-03-27 13:25:34,2018-03-27 13:25:34,0,41943540,urxvt,i3-tracker-rs: cargo run
+55,2018-03-27 13:26:11,2018-03-27 13:26:11,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+56,2018-03-27 13:26:11,2018-03-27 13:26:13,2,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+57,2018-03-27 13:26:11,2018-03-27 13:26:15,4,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+58,2018-03-27 13:26:11,2018-03-27 13:26:15,4,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+59,2018-03-27 13:26:11,2018-03-27 13:26:17,6,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+60,2018-03-27 13:26:11,2018-03-27 13:26:17,6,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+61,2018-03-27 13:26:11,2018-03-27 13:26:17,6,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+62,2018-03-27 13:26:11,2018-03-27 13:26:17,6,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+63,2018-03-27 13:26:11,2018-03-27 13:26:19,8,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+64,2018-03-27 13:26:11,2018-03-27 13:26:19,8,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+65,2018-03-27 13:26:11,2018-03-27 13:26:19,8,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+66,2018-03-27 13:26:11,2018-03-27 13:26:19,8,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+67,2018-03-27 13:26:11,2018-03-27 13:26:19,8,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+68,2018-03-27 13:26:11,2018-03-27 13:26:19,8,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+69,2018-03-27 13:26:11,2018-03-27 13:26:19,8,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+70,2018-03-27 13:26:11,2018-03-27 13:26:19,8,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+71,2018-03-27 13:26:20,2018-03-27 13:26:20,0,41943540,urxvt,i3-tracker-rs: cargo run
+72,2018-03-27 13:36:48,2018-03-27 13:36:48,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+73,2018-03-27 13:36:56,2018-03-27 13:36:56,0,41943540,urxvt,i3-tracker-rs: cargo run
+74,2018-03-27 13:38:11,2018-03-27 13:38:11,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+75,2018-03-27 13:38:11,2018-03-27 13:38:13,2,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+76,2018-03-27 13:38:11,2018-03-27 13:38:15,4,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+77,2018-03-27 13:38:11,2018-03-27 13:38:17,6,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+78,2018-03-27 13:38:18,2018-03-27 13:38:18,0,41943540,urxvt,i3-tracker-rs: cargo run
+79,2018-03-27 13:38:18,2018-03-27 13:38:18,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+80,2018-03-27 13:38:18,2018-03-27 13:38:19,1,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+81,2018-03-27 13:38:18,2018-03-27 13:38:20,1,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+82,2018-03-27 13:38:18,2018-03-27 13:38:20,2,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+83,2018-03-27 13:38:18,2018-03-27 13:38:21,3,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+84,2018-03-27 13:38:18,2018-03-27 13:38:22,3,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+85,2018-03-27 13:38:22,2018-03-27 13:38:22,0,41943540,urxvt,i3-tracker-rs: cargo run
+86,2018-03-27 13:38:22,2018-03-27 13:38:22,0,41943540,urxvt,i3-tracker-rs: cargo run
+87,2018-03-27 13:38:22,2018-03-27 13:38:23,1,41943540,urxvt,i3-tracker-rs: cargo run
+88,2018-03-27 13:38:22,2018-03-27 13:38:24,1,41943540,urxvt,i3-tracker-rs: cargo run
+89,2018-03-27 13:38:22,2018-03-27 13:38:24,2,41943540,urxvt,i3-tracker-rs: cargo run
+90,2018-03-27 13:38:22,2018-03-27 13:38:24,2,41943540,urxvt,i3-tracker-rs: cargo run
+91,2018-03-27 13:38:22,2018-03-27 13:38:25,3,41943540,urxvt,i3-tracker-rs: cargo run
+92,2018-03-27 13:38:22,2018-03-27 13:38:26,3,41943540,urxvt,i3-tracker-rs: cargo run
+93,2018-03-27 13:38:22,2018-03-27 13:38:26,4,41943540,urxvt,i3-tracker-rs: cargo run
+94,2018-03-27 13:38:22,2018-03-27 13:38:26,4,41943540,urxvt,i3-tracker-rs: cargo run
+95,2018-03-27 13:40:11,2018-03-27 13:40:11,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+96,2018-03-27 13:40:11,2018-03-27 13:40:13,2,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+97,2018-03-27 13:40:16,2018-03-27 13:40:16,0,41943540,urxvt,i3-tracker-rs: cargo run
+98,2018-03-27 13:40:17,2018-03-27 13:40:17,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+99,2018-03-27 13:40:17,2018-03-27 13:40:17,0,41943540,urxvt,i3-tracker-rs: cargo run
+100,2018-03-27 13:40:17,2018-03-27 13:40:17,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+101,2018-03-27 13:40:17,2018-03-27 13:40:17,0,41943540,urxvt,i3-tracker-rs: cargo run
+102,2018-03-27 13:40:17,2018-03-27 13:40:17,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+103,2018-03-27 13:40:17,2018-03-27 13:40:17,0,41943540,urxvt,i3-tracker-rs: cargo run
+104,2018-03-27 13:40:17,2018-03-27 13:40:17,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+105,2018-03-27 13:40:18,2018-03-27 13:40:18,0,41943540,urxvt,i3-tracker-rs: cargo run
+106,2018-03-27 13:40:18,2018-03-27 13:40:18,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+107,2018-03-27 13:40:26,2018-03-27 13:40:26,0,41943540,urxvt,i3-tracker-rs: cargo run
+108,2018-03-27 13:40:59,2018-03-27 13:40:59,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+109,2018-03-27 13:40:59,2018-03-27 13:41:01,2,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+110,2018-03-27 13:41:10,2018-03-27 13:41:10,0,41943540,urxvt,i3-tracker-rs: cargo run
+111,2018-03-27 13:41:16,2018-03-27 13:41:16,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+112,2018-03-27 13:41:19,2018-03-27 13:41:19,0,41943540,urxvt,i3-tracker-rs: cargo run
+113,2018-03-27 13:41:25,2018-03-27 13:41:25,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+114,2018-03-27 13:41:25,2018-03-27 13:41:25,0,41943540,urxvt,i3-tracker-rs: cargo run
+115,2018-03-27 14:17:29,2018-03-27 14:17:29,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+116,2018-03-27 14:17:29,2018-03-27 14:17:31,2,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+117,2018-03-27 14:17:29,2018-03-27 14:17:33,4,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+118,2018-03-27 14:17:29,2018-03-27 14:17:35,6,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+119,2018-03-27 14:17:29,2018-03-27 14:17:37,8,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+120,2018-03-27 14:17:38,2018-03-27 14:17:38,0,41943540,urxvt,i3-tracker-rs: cargo run
+121,2018-03-27 14:17:38,2018-03-27 14:17:39,1,41943540,urxvt,i3-tracker-rs: cargo run
+122,2018-03-27 14:17:38,2018-03-27 14:17:40,2,41943540,urxvt,i3-tracker-rs: cargo run
+123,2018-03-27 14:17:38,2018-03-27 14:17:41,3,41943540,urxvt,i3-tracker-rs: cargo run
+124,2018-03-27 14:17:38,2018-03-27 14:17:42,4,41943540,urxvt,i3-tracker-rs: cargo run
+125,2018-03-27 14:19:35,2018-03-27 14:19:35,0,41943540,urxvt,i3-tracker-rs: cargo run
+126,2018-03-27 14:19:36,2018-03-27 14:19:36,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+127,2018-03-27 14:19:40,2018-03-27 14:19:40,0,41943540,urxvt,i3-tracker-rs: cargo run
+128,2018-03-27 14:19:42,2018-03-27 14:19:42,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+129,2018-03-27 14:19:42,2018-03-27 14:19:42,0,29360144,Navigator,i3-tracker-rs/time_tracker.rs at master · danbruce/i3-tracker-rs - Mozilla Firefox
+130,2018-03-27 14:19:43,2018-03-27 14:19:43,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+131,2018-03-27 14:19:47,2018-03-27 14:19:47,0,41943540,urxvt,i3-tracker-rs: cargo run
+132,2018-03-27 14:20:33,2018-03-27 14:20:33,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+133,2018-03-27 14:20:37,2018-03-27 14:20:37,0,41943540,urxvt,i3-tracker-rs: cargo run
+134,2018-03-27 14:20:38,2018-03-27 14:20:38,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+135,2018-03-27 14:20:41,2018-03-27 14:20:41,0,48234497,code,● main.rs - i3-tracker-rs - Visual Studio Code
+136,2018-03-27 14:20:42,2018-03-27 14:20:42,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+137,2018-03-27 14:20:43,2018-03-27 14:20:43,0,41943540,urxvt,i3-tracker-rs: cargo run
+138,2018-03-27 14:21:35,2018-03-27 14:21:35,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+139,2018-03-27 14:21:41,2018-03-27 14:21:41,0,41943540,urxvt,i3-tracker-rs: cargo run
+140,2018-03-27 14:24:05,2018-03-27 14:24:05,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+141,2018-03-27 14:24:07,2018-03-27 14:24:07,0,41943540,urxvt,i3-tracker-rs: cargo run
+142,2018-03-27 14:24:07,2018-03-27 14:24:07,0,41943540,urxvt,i3-tracker-rs: cargo run
+143,2018-03-27 14:24:07,2018-03-27 14:24:09,2,41943540,urxvt,i3-tracker-rs: cargo run
+144,2018-03-27 14:24:07,2018-03-27 14:24:09,2,41943540,urxvt,i3-tracker-rs: cargo run
+145,2018-03-27 14:24:07,2018-03-27 14:24:11,4,41943540,urxvt,i3-tracker-rs: cargo run
+146,2018-03-27 14:24:07,2018-03-27 14:24:11,4,41943540,urxvt,i3-tracker-rs: cargo run
+147,2018-03-27 14:24:07,2018-03-27 14:24:13,6,41943540,urxvt,i3-tracker-rs: cargo run
+148,2018-03-27 14:24:07,2018-03-27 14:24:13,6,41943540,urxvt,i3-tracker-rs: cargo run
+149,2018-03-27 14:24:07,2018-03-27 14:24:15,8,41943540,urxvt,i3-tracker-rs: cargo run
+150,2018-03-27 14:24:07,2018-03-27 14:24:15,8,41943540,urxvt,i3-tracker-rs: cargo run
+151,2018-03-27 14:24:16,2018-03-27 14:24:16,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+152,2018-03-27 14:24:16,2018-03-27 14:24:16,0,41943540,urxvt,i3-tracker-rs: cargo run
+153,2018-03-27 14:24:16,2018-03-27 14:24:17,0,41943540,urxvt,i3-tracker-rs: cargo run
+154,2018-03-27 14:24:16,2018-03-27 14:24:17,1,41943540,urxvt,i3-tracker-rs: cargo run
+155,2018-03-27 14:24:16,2018-03-27 14:24:18,1,41943540,urxvt,i3-tracker-rs: cargo run
+156,2018-03-27 14:24:16,2018-03-27 14:24:18,2,41943540,urxvt,i3-tracker-rs: cargo run
+157,2018-03-27 14:24:16,2018-03-27 14:24:19,2,41943540,urxvt,i3-tracker-rs: cargo run
+158,2018-03-27 14:24:16,2018-03-27 14:24:19,3,41943540,urxvt,i3-tracker-rs: cargo run
+159,2018-03-27 14:24:16,2018-03-27 14:24:20,3,41943540,urxvt,i3-tracker-rs: cargo run
+160,2018-03-27 14:24:16,2018-03-27 14:24:20,4,41943540,urxvt,i3-tracker-rs: cargo run
+161,2018-03-27 14:24:16,2018-03-27 14:24:21,4,41943540,urxvt,i3-tracker-rs: cargo run
+162,2018-03-27 14:24:16,2018-03-27 14:24:21,5,41943540,urxvt,i3-tracker-rs: cargo run
+163,2018-03-27 14:24:16,2018-03-27 14:24:22,5,41943540,urxvt,i3-tracker-rs: cargo run
+164,2018-03-27 14:24:16,2018-03-27 14:24:22,6,41943540,urxvt,i3-tracker-rs: cargo run
+165,2018-03-27 14:27:01,2018-03-27 14:27:01,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+166,2018-03-27 14:27:03,2018-03-27 14:27:03,0,48234497,code,● main.rs - i3-tracker-rs - Visual Studio Code
+167,2018-03-27 14:27:03,2018-03-27 14:27:03,0,48234497,code,● main.rs - i3-tracker-rs - Visual Studio Code
+168,2018-03-27 14:27:04,2018-03-27 14:27:04,0,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+169,2018-03-27 14:27:04,2018-03-27 14:27:05,1,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+170,2018-03-27 14:27:04,2018-03-27 14:27:05,1,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+171,2018-03-27 14:27:04,2018-03-27 14:27:06,2,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+172,2018-03-27 14:27:04,2018-03-27 14:27:07,3,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+173,2018-03-27 14:27:04,2018-03-27 14:27:07,3,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+174,2018-03-27 14:27:04,2018-03-27 14:27:08,4,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+175,2018-03-27 14:27:04,2018-03-27 14:27:09,5,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+176,2018-03-27 14:27:04,2018-03-27 14:27:09,5,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+177,2018-03-27 14:27:04,2018-03-27 14:27:10,6,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+178,2018-03-27 14:27:04,2018-03-27 14:27:11,7,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+179,2018-03-27 14:27:04,2018-03-27 14:27:11,7,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+180,2018-03-27 14:27:04,2018-03-27 14:27:12,8,48234497,code,main.rs - i3-tracker-rs - Visual Studio Code
+181,2018-03-27 14:27:12,2018-03-27 14:27:12,0,41943540,urxvt,i3-tracker-rs: cargo run
+182,2018-03-27 14:27:12,2018-03-27 14:27:13,0,41943540,urxvt,i3-tracker-rs: cargo run
+183,2018-03-27 14:27:12,2018-03-27 14:27:13,1,41943540,urxvt,i3-tracker-rs: cargo run
+184,2018-03-27 14:27:12,2018-03-27 14:27:14,1,41943540,urxvt,i3-tracker-rs: cargo run
+185,2018-03-27 14:27:12,2018-03-27 14:27:14,2,41943540,urxvt,i3-tracker-rs: cargo run
+186,2018-03-27 14:27:12,2018-03-27 14:27:15,2,41943540,urxvt,i3-tracker-rs: cargo run
+187,2018-03-27 14:27:12,2018-03-27 14:27:15,3,41943540,urxvt,i3-tracker-rs: cargo run
+188,2018-03-27 14:27:12,2018-03-27 14:27:16,3,41943540,urxvt,i3-tracker-rs: cargo run
+189,2018-03-27 14:27:12,2018-03-27 14:27:16,4,41943540,urxvt,i3-tracker-rs: cargo run
+190,2018-03-27 14:27:12,2018-03-27 14:27:17,4,41943540,urxvt,i3-tracker-rs: cargo run
+191,2018-03-27 14:27:12,2018-03-27 14:27:17,5,41943540,urxvt,i3-tracker-rs: cargo run
+192,2018-03-27 14:27:12,2018-03-27 14:27:18,5,41943540,urxvt,i3-tracker-rs: cargo run

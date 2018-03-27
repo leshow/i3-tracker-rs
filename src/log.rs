@@ -7,26 +7,18 @@ use xcb;
 
 pub enum I3Event {
     Log(LogEvent),
-    Last(),
+    Last(u32),
 }
 
 #[derive(Debug, Clone)]
 pub struct LogEvent {
-    start_time: DateTime<Local>,
-    window_id: u32,
-    window_class: String,
-    window_title: String,
+    pub start_time: DateTime<Local>,
+    pub window_id: u32,
+    pub window_class: String,
+    pub window_title: String,
 }
 
 impl LogEvent {
-    // pub fn new(window_id: u32, window_class: String, window_title: String) ->
-    // LogEvent {     LogEvent {
-    //         start_time: Local::now(),
-    //         window_id,
-    //         window_class,
-    //         window_title,
-    //     }
-    // }
     pub fn new(window_id: u32, xorg_conn: &xcb::Connection, e: &WindowEventInfo) -> LogEvent {
         LogEvent {
             start_time: Local::now(),
@@ -83,12 +75,12 @@ impl LogEvent {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Log {
     pub id: u32,
-    start_time: String,
-    end_time: String,
-    duration: i64,
-    window_id: u32,
-    window_class: String,
-    window_title: String,
+    pub start_time: String,
+    pub end_time: String,
+    pub duration: i64,
+    pub window_id: u32,
+    pub window_class: String,
+    pub window_title: String,
 }
 
 impl Log {

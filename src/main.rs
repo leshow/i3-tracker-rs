@@ -1,3 +1,4 @@
+#![feature(conservative_impl_trait)]
 extern crate chrono;
 extern crate csv;
 extern crate i3ipc;
@@ -9,7 +10,7 @@ extern crate tokio_core;
 extern crate xcb;
 
 mod error;
-mod time_tracker;
+mod log;
 
 use csv::{Reader, Writer, WriterBuilder};
 use error::TrackErr;
@@ -19,12 +20,14 @@ use i3ipc::I3EventListener;
 use i3ipc::Subscription;
 use i3ipc::event::Event;
 use i3ipc::event::inner::WindowChange;
+use log::{I3Event, Log, LogEvent};
 use std::fs::{File, OpenOptions};
 use std::path::Path;
 use std::thread;
 use std::time::Duration;
-use time_tracker::{I3Event, Log, LogEvent};
-use tokio_core::reactor::{Core, Interval};
+use tokio_core::reactor::{Core, Handle, Timeout};
+
+const DELAY: u64 = 2;
 
 fn main() {
     if let Err(e) = run("output.log") {
@@ -33,53 +36,58 @@ fn main() {
 }
 
 fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
+    // make core
     let mut core = Core::new()?;
     let handle = core.handle();
-
     // log interval
     let (tx, rx) = mpsc::channel(100);
-    let tx_ = tx.clone();
-    let interval = Interval::new(Duration::from_secs(30), &handle)?
-        .for_each(move |_| {
-            let tx_ = tx_.clone();
-            tx_.send(I3Event::Last()).wait().unwrap();
-            Ok(())
-        })
-        .map_err(|_| ());
-
     // spawn listen loop
-    thread::spawn(move || {
+    {
         let tx = tx.clone();
-        listen_loop(tx).unwrap();
-    });
-
+        thread::spawn(move || {
+            listen_loop(tx).unwrap();
+        });
+    }
     let mut writer = csv_writer(&out_path)?;
     // receive and write
     let mut next_id = initial_event_id(&out_path)?;
-    let mut last_log = None;
+    let mut last_log: Option<LogEvent> = None;
 
     let f2 = rx.for_each(move |event| {
         match event {
             I3Event::Log(log) => {
-                println!("{:?}", log);
+                println!("{} - {:?}", next_id, log);
                 Log::new(next_id, &log).write(&mut writer).unwrap();
+                next_id += 1;
+                handle.spawn(timeout(tx.clone(), &handle, next_id));
+
                 last_log = Some(log);
             }
-            I3Event::Last() => {
-                println!("do last: {:?}", last_log);
-                if let Some(ref log) = last_log {
-                    Log::new(next_id, log).write(&mut writer).unwrap();
+            I3Event::Last(id) => {
+                if next_id != id {
+                    println!("do last: {} - {:?}", id, last_log);
+                    if let Some(ref log) = last_log {
+                        Log::new(next_id, log).write(&mut writer).unwrap();
+                        next_id += 1;
+                    }
+                    handle.spawn(timeout(tx.clone(), &handle, id));
                 }
             }
         }
-        next_id += 1;
         Ok(())
     });
 
-    handle.spawn(interval);
     core.run(f2).expect("Core failed");
-
     Ok(())
+}
+
+fn timeout(tx: Sender<I3Event>, handle: &Handle, id: u32) -> impl Future<Item = (), Error = ()> {
+    Timeout::new(Duration::from_secs(DELAY), &handle)
+        .unwrap()
+        .then(move |_| {
+            tx.send(I3Event::Last(id)).wait().unwrap();
+            Ok(())
+        })
 }
 
 fn listen_loop(tx: Sender<I3Event>) -> Result<(), TrackErr> {
