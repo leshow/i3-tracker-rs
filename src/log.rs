@@ -1,29 +1,31 @@
 use chrono::prelude::*;
-use csv::Writer;
+use csv::{Reader, Writer};
 use error::TrackErr;
 use i3ipc::event::WindowEventInfo;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
+use std::io::{self, ErrorKind};
+use std::path::Path;
 use xcb;
 
-pub enum I3Event {
-    Log(LogEvent),
-    Last(u32),
+pub enum LogEvent {
+    Log(I3LogEvent),
+    Tick(u32),
 }
 
-#[derive(Debug, Clone)]
-pub struct LogEvent {
+#[derive(Debug)]
+pub struct I3LogEvent {
     pub start_time: DateTime<Local>,
     pub window_id: u32,
     pub window_class: String,
     pub window_title: String,
 }
 
-impl LogEvent {
-    pub fn new(window_id: u32, xorg_conn: &xcb::Connection, e: &WindowEventInfo) -> LogEvent {
-        LogEvent {
+impl I3LogEvent {
+    pub fn new(window_id: u32, xorg_conn: &xcb::Connection, e: &WindowEventInfo) -> I3LogEvent {
+        I3LogEvent {
             start_time: Local::now(),
             window_id,
-            window_class: LogEvent::get_class(&xorg_conn, window_id as u32),
+            window_class: I3LogEvent::get_class(&xorg_conn, window_id as u32),
             window_title: e.container
                 .name
                 .clone()
@@ -35,7 +37,6 @@ impl LogEvent {
      * https://stackoverflow.com/questions/44833160/how-do-i-get-the-x-window-class-given-a-window-id-with-rust-xcb
      */
     pub fn get_class(conn: &xcb::Connection, window_id: u32) -> String {
-        let window: xcb::xproto::Window = window_id;
         let long_length: u32 = 8;
         let mut long_offset: u32 = 0;
         let mut buf = Vec::new();
@@ -43,7 +44,7 @@ impl LogEvent {
             let cookie = xcb::xproto::get_property(
                 conn,
                 false,
-                window,
+                window_id,
                 xcb::xproto::ATOM_WM_CLASS,
                 xcb::xproto::ATOM_STRING,
                 long_offset,
@@ -84,7 +85,7 @@ pub struct Log {
 }
 
 impl Log {
-    pub fn new(id: u32, e: &LogEvent) -> Log {
+    pub fn new(id: u32, e: &I3LogEvent) -> Log {
         let now = Local::now();
         let elapsed = now.signed_duration_since(e.start_time);
         Log {
@@ -101,5 +102,25 @@ impl Log {
         writer.serialize(self)?;
         writer.flush()?;
         Ok(())
+    }
+    pub fn read<P: AsRef<Path>>(path: P) -> Result<Log, TrackErr> {
+        if let Ok(f) = OpenOptions::new().read(true).open(path) {
+            let mut r = Reader::from_reader(f);
+            if let Some(res) = r.deserialize().last() {
+                let log: Log = res?;
+                return Ok(log);
+            }
+        }
+        Err(TrackErr::Io(io::Error::new(
+            ErrorKind::NotFound,
+            "output not found",
+        )))
+    }
+}
+
+pub fn initial_event_id<P: AsRef<Path>>(path: P) -> u32 {
+    match Log::read(path) {
+        Ok(Log { id, .. }) => id + 1,
+        Err(_) => 1,
     }
 }

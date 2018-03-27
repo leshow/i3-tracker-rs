@@ -1,4 +1,3 @@
-#![feature(conservative_impl_trait)]
 extern crate chrono;
 extern crate csv;
 extern crate i3ipc;
@@ -12,7 +11,7 @@ extern crate xcb;
 mod error;
 mod log;
 
-use csv::{Reader, Writer, WriterBuilder};
+use csv::{Writer, WriterBuilder};
 use error::TrackErr;
 use futures::prelude::*;
 use futures::sync::mpsc::{self, Sender};
@@ -20,7 +19,7 @@ use i3ipc::I3EventListener;
 use i3ipc::Subscription;
 use i3ipc::event::Event;
 use i3ipc::event::inner::WindowChange;
-use log::{I3Event, Log, LogEvent};
+use log::{I3LogEvent, Log, LogEvent};
 use std::fs::{File, OpenOptions};
 use std::path::Path;
 use std::thread;
@@ -49,24 +48,22 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
         });
     }
     let mut writer = csv_writer(&out_path)?;
-    // receive and write
-    let mut next_id = initial_event_id(&out_path)?;
-    let mut last_log: Option<LogEvent> = None;
-
+    let mut next_id = log::initial_event_id(&out_path);
+    let mut last_log: Option<I3LogEvent> = None;
+    // consume events
     let f2 = rx.for_each(move |event| {
         match event {
-            I3Event::Log(log) => {
+            LogEvent::Log(log) => {
                 println!("{} - {:?}", next_id, log);
                 Log::new(next_id, &log).write(&mut writer).unwrap();
                 next_id += 1;
                 handle.spawn(timeout(tx.clone(), &handle, next_id));
-
                 last_log = Some(log);
             }
-            I3Event::Last(id) => {
+            LogEvent::Tick(id) => {
                 if next_id != id {
-                    println!("do last: {} - {:?}", id, last_log);
                     if let Some(ref log) = last_log {
+                        println!("do last: {} - {:?}", id, last_log);
                         Log::new(next_id, log).write(&mut writer).unwrap();
                         next_id += 1;
                     }
@@ -76,21 +73,20 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
         }
         Ok(())
     });
-
     core.run(f2).expect("Core failed");
     Ok(())
 }
 
-fn timeout(tx: Sender<I3Event>, handle: &Handle, id: u32) -> impl Future<Item = (), Error = ()> {
+fn timeout(tx: Sender<LogEvent>, handle: &Handle, id: u32) -> impl Future<Item = (), Error = ()> {
     Timeout::new(Duration::from_secs(DELAY), &handle)
         .unwrap()
         .then(move |_| {
-            tx.send(I3Event::Last(id)).wait().unwrap();
+            tx.send(LogEvent::Tick(id)).wait().unwrap();
             Ok(())
         })
 }
 
-fn listen_loop(tx: Sender<I3Event>) -> Result<(), TrackErr> {
+fn listen_loop(tx: Sender<LogEvent>) -> Result<(), TrackErr> {
     let mut i3_listener = I3EventListener::connect()?;
     let (xorg_conn, _) = xcb::Connection::connect(None)?;
     let subs = [Subscription::Window];
@@ -125,25 +121,14 @@ fn listen_loop(tx: Sender<I3Event>) -> Result<(), TrackErr> {
             prev_new_window_id = None;
             match e.change {
                 WindowChange::Focus | WindowChange::Title => {
-                    let event = LogEvent::new(window_id as u32, &xorg_conn, &e);
-                    tx.send(I3Event::Log(event)).wait().unwrap();
+                    let event = I3LogEvent::new(window_id as u32, &xorg_conn, &e);
+                    tx.send(LogEvent::Log(event)).wait().unwrap();
                 }
                 _ => {}
             };
         }
     }
     Ok(())
-}
-
-fn initial_event_id<P: AsRef<Path>>(path: P) -> Result<u32, TrackErr> {
-    if let Ok(f) = OpenOptions::new().read(true).open(path) {
-        let mut r = Reader::from_reader(f);
-        if let Some(res) = r.deserialize().last() {
-            let log: Log = res?;
-            return Ok(log.id + 1);
-        }
-    }
-    Ok(1)
 }
 
 fn csv_writer<P: AsRef<Path>>(path: P) -> Result<Writer<File>, TrackErr> {
