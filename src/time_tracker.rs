@@ -1,40 +1,32 @@
 use chrono::prelude::*;
 use csv::Writer;
 use error::TrackErr;
-use i3ipc::event::WindowEventInfo;
 use std::fs::File;
 use xcb;
 
+#[derive(Debug)]
 pub struct LogEvent {
-    id: u32,
     start_time: DateTime<Local>,
-    window_id: i32,
+    window_id: u32,
     window_class: String,
     window_title: String,
 }
 
 impl LogEvent {
-    pub fn new(id: u32, event: &WindowEventInfo, xorg_conn: &xcb::Connection) -> LogEvent {
-        let window_id = event.container.window.unwrap_or(-1);
-
+    pub fn new(window_id: u32, window_class: String, window_title: String) -> LogEvent {
         LogEvent {
-            id,
             start_time: Local::now(),
             window_id,
-            window_class: LogEvent::get_class(xorg_conn, window_id),
-            window_title: event
-                .container
-                .name
-                .clone()
-                .unwrap_or_else(|| "Untitled".into()),
+            window_class,
+            window_title,
         }
     }
     /*
      * pulled from:
      * https://stackoverflow.com/questions/44833160/how-do-i-get-the-x-window-class-given-a-window-id-with-rust-xcb
      */
-    pub fn get_class(conn: &xcb::Connection, id: i32) -> String {
-        let window: xcb::xproto::Window = id as u32;
+    pub fn get_class(conn: &xcb::Connection, window_id: u32) -> String {
+        let window: xcb::xproto::Window = window_id;
         let long_length: u32 = 8;
         let mut long_offset: u32 = 0;
         let mut buf = Vec::new();
@@ -77,17 +69,17 @@ pub struct Log {
     start_time: String,
     end_time: String,
     duration: i64,
-    window_id: i32,
+    window_id: u32,
     window_class: String,
     window_title: String,
 }
 
 impl Log {
-    pub fn new(event: LogEvent) -> Log {
+    pub fn new(id: u32, event: LogEvent) -> Log {
         let now = Local::now();
         let elapsed = now.signed_duration_since(event.start_time);
         Log {
-            id: event.id,
+            id,
             window_id: event.window_id,
             window_class: event.window_class,
             window_title: event.window_title,
