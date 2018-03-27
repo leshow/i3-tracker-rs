@@ -14,7 +14,7 @@ mod time_tracker;
 use csv::{Reader, Writer, WriterBuilder};
 use error::TrackErr;
 use futures::prelude::*;
-use futures::sync::mpsc::{self, Receiver, Sender};
+use futures::sync::mpsc::{self, Sender};
 use i3ipc::I3EventListener;
 use i3ipc::Subscription;
 use i3ipc::event::Event;
@@ -23,7 +23,7 @@ use std::fs::{File, OpenOptions};
 use std::path::Path;
 use std::thread;
 use std::time::Duration;
-use time_tracker::{Log, LogEvent};
+use time_tracker::{I3Event, Log, LogEvent};
 use tokio_core::reactor::{Core, Interval};
 
 fn main() {
@@ -33,68 +33,63 @@ fn main() {
 }
 
 fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
-    let mut writer = csv_writer(&out_path)?;
-    let mut i3_listener = I3EventListener::connect()?;
-
-    let (xorg_conn, _) = xcb::Connection::connect(None)?;
-    i3_listener.subscribe(&[Subscription::Window])?;
-
     let mut core = Core::new()?;
     let handle = core.handle();
 
     // log interval
-    let (tx, rx) = mpsc::channel(1024);
+    let (tx, rx) = mpsc::channel(100);
     let tx_ = tx.clone();
-    let interval = Interval::new(Duration::from_secs(1), &handle)?
+    let interval = Interval::new(Duration::from_secs(30), &handle)?
         .for_each(move |_| {
-            println!("foo");
-            if let Event::WindowEvent(e) = i3_listener.listen().last().unwrap().unwrap() {
-                let tx_ = tx_.clone();
-                let window_id = e.container.window.unwrap_or(-1) as u32;
-                let window_class = LogEvent::get_class(&xorg_conn, window_id);
-                let window_title = e.container
-                    .name
-                    .clone()
-                    .unwrap_or_else(|| "Untitled".into());
-
-                tx_.send(LogEvent::new(window_id, window_class, window_title))
-                    .wait()
-                    .unwrap();
-            }
+            let tx_ = tx_.clone();
+            tx_.send(I3Event::Last()).wait().unwrap();
             Ok(())
         })
         .map_err(|_| ());
 
-    // spawn main loop
-    let h2 = thread::spawn(move || {
+    // spawn listen loop
+    thread::spawn(move || {
         let tx = tx.clone();
         listen_loop(tx).unwrap();
     });
 
+    let mut writer = csv_writer(&out_path)?;
     // receive and write
     let mut next_id = initial_event_id(&out_path)?;
-    let f2 = rx.for_each(|log| {
-        println!("{:?}", log);
-        Log::new(next_id, log).write(&mut writer).unwrap();
+    let mut last_log = None;
+
+    let f2 = rx.for_each(move |event| {
+        match event {
+            I3Event::Log(log) => {
+                println!("{:?}", log);
+                Log::new(next_id, &log).write(&mut writer).unwrap();
+                last_log = Some(log);
+            }
+            I3Event::Last() => {
+                println!("do last: {:?}", last_log);
+                if let Some(ref log) = last_log {
+                    Log::new(next_id, log).write(&mut writer).unwrap();
+                }
+            }
+        }
         next_id += 1;
         Ok(())
     });
 
     handle.spawn(interval);
     core.run(f2).expect("Core failed");
-    h2.join().unwrap();
+
     Ok(())
 }
 
-fn listen_loop(tx: Sender<LogEvent>) -> Result<(), TrackErr> {
+fn listen_loop(tx: Sender<I3Event>) -> Result<(), TrackErr> {
     let mut i3_listener = I3EventListener::connect()?;
     let (xorg_conn, _) = xcb::Connection::connect(None)?;
-
     let subs = [Subscription::Window];
     i3_listener.subscribe(&subs)?;
     let mut prev_new_window_id: Option<i32> = None;
+
     for event in i3_listener.listen() {
-        println!("bar");
         let tx = tx.clone();
         if let Event::WindowEvent(e) = event? {
             let window_id = e.container.window.unwrap_or(-1);
@@ -122,13 +117,8 @@ fn listen_loop(tx: Sender<LogEvent>) -> Result<(), TrackErr> {
             prev_new_window_id = None;
             match e.change {
                 WindowChange::Focus | WindowChange::Title => {
-                    let window_class = LogEvent::get_class(&xorg_conn, window_id as u32);
-                    let window_title = e.container
-                        .name
-                        .clone()
-                        .unwrap_or_else(|| "Untitled".into());
-                    let send_event = LogEvent::new(window_id as u32, window_class, window_title);
-                    tx.send(send_event).wait().unwrap();
+                    let event = LogEvent::new(window_id as u32, &xorg_conn, &e);
+                    tx.send(I3Event::Log(event)).wait().unwrap();
                 }
                 _ => {}
             };
@@ -159,6 +149,3 @@ fn csv_writer<P: AsRef<Path>>(path: P) -> Result<Writer<File>, TrackErr> {
         .from_writer(file);
     Ok(wtr)
 }
-
-// every 60 seconds if no log has been written then write it,
-// otherwise keep writing

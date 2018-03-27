@@ -1,10 +1,16 @@
 use chrono::prelude::*;
 use csv::Writer;
 use error::TrackErr;
+use i3ipc::event::WindowEventInfo;
 use std::fs::File;
 use xcb;
 
-#[derive(Debug)]
+pub enum I3Event {
+    Log(LogEvent),
+    Last(),
+}
+
+#[derive(Debug, Clone)]
 pub struct LogEvent {
     start_time: DateTime<Local>,
     window_id: u32,
@@ -13,12 +19,23 @@ pub struct LogEvent {
 }
 
 impl LogEvent {
-    pub fn new(window_id: u32, window_class: String, window_title: String) -> LogEvent {
+    // pub fn new(window_id: u32, window_class: String, window_title: String) ->
+    // LogEvent {     LogEvent {
+    //         start_time: Local::now(),
+    //         window_id,
+    //         window_class,
+    //         window_title,
+    //     }
+    // }
+    pub fn new(window_id: u32, xorg_conn: &xcb::Connection, e: &WindowEventInfo) -> LogEvent {
         LogEvent {
             start_time: Local::now(),
             window_id,
-            window_class,
-            window_title,
+            window_class: LogEvent::get_class(&xorg_conn, window_id as u32),
+            window_title: e.container
+                .name
+                .clone()
+                .unwrap_or_else(|| "Untitled".into()),
         }
     }
     /*
@@ -75,16 +92,16 @@ pub struct Log {
 }
 
 impl Log {
-    pub fn new(id: u32, event: LogEvent) -> Log {
+    pub fn new(id: u32, e: &LogEvent) -> Log {
         let now = Local::now();
-        let elapsed = now.signed_duration_since(event.start_time);
+        let elapsed = now.signed_duration_since(e.start_time);
         Log {
             id,
-            window_id: event.window_id,
-            window_class: event.window_class,
-            window_title: event.window_title,
+            window_id: e.window_id,
+            window_class: e.window_class.clone(),
+            window_title: e.window_title.clone(),
             duration: elapsed.num_seconds(),
-            start_time: event.start_time.format("%F %T").to_string(),
+            start_time: e.start_time.format("%F %T").to_string(),
             end_time: now.format("%F %T").to_string(),
         }
     }
