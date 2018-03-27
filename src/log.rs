@@ -1,4 +1,4 @@
-use chrono::prelude::*;
+use chrono::{DateTime, Local};
 use csv::{Reader, Writer};
 use error::TrackErr;
 use i3ipc::event::WindowEventInfo;
@@ -8,11 +8,12 @@ use std::path::Path;
 use xcb;
 
 pub enum LogEvent {
-    Log(I3LogEvent),
+    I3Event(I3LogEvent),
     Tick(u32),
+    Interval,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct I3LogEvent {
     pub start_time: DateTime<Local>,
     pub window_id: u32,
@@ -30,6 +31,17 @@ impl I3LogEvent {
                 .name
                 .clone()
                 .unwrap_or_else(|| "Untitled".into()),
+        }
+    }
+    pub fn update_time(&mut self) {
+        self.start_time = Local::now();
+    }
+    pub fn new_time(&self) -> Self {
+        I3LogEvent {
+            start_time: Local::now(),
+            window_id: self.window_id.clone(),
+            window_class: self.window_class.clone(),
+            window_title: self.window_title.clone(),
         }
     }
     /*
