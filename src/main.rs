@@ -19,8 +19,8 @@ pub(crate) use log::{I3LogEvent, Log, LogEvent};
 
 use csv::{Writer, WriterBuilder};
 use fs2::FileExt;
-use futures::sync::mpsc::{self, Sender};
 use futures::prelude::*;
+use futures::sync::mpsc::{self, Sender};
 use i3ipc::{I3EventListener, Subscription, event::{Event, inner::WindowChange}};
 use std::fs::{File, OpenOptions};
 use std::{thread, path::Path, time::Duration};
@@ -64,6 +64,7 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
             listen_loop(tx).unwrap();
         });
     }
+
     let mut writer = csv_writer(&out_path)?;
     let mut prev_i3_event: Option<I3LogEvent> = None;
     // consume events
