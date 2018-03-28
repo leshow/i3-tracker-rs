@@ -10,7 +10,6 @@ use xcb;
 pub enum LogEvent {
     I3Event(I3LogEvent),
     Tick(u32),
-    Interval,
 }
 
 #[derive(Debug, Clone)]

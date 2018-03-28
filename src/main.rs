@@ -1,4 +1,4 @@
-#![feature(nll, conservative_impl_trait)]
+#![feature(nll)]
 extern crate chrono;
 extern crate csv;
 extern crate i3ipc;
@@ -12,23 +12,19 @@ extern crate xcb;
 mod error;
 mod log;
 
-use chrono::Local;
+pub use error::TrackErr;
+pub(crate) use log::{I3LogEvent, Log, LogEvent};
+
 use csv::{Writer, WriterBuilder};
-use error::TrackErr;
 use futures::prelude::*;
 use futures::sync::mpsc::{self, Sender};
-use i3ipc::I3EventListener;
-use i3ipc::Subscription;
-use i3ipc::event::Event;
-use i3ipc::event::inner::WindowChange;
-use log::{I3LogEvent, Log, LogEvent};
+use i3ipc::event::{Event, inner::WindowChange};
+use i3ipc::{I3EventListener, Subscription};
 use std::fs::{File, OpenOptions};
-use std::path::Path;
-use std::thread;
-use std::time::Duration;
-use tokio_core::reactor::{Core, Handle, Interval, Timeout};
+use std::{thread, path::Path, time::Duration};
+use tokio_core::reactor::{Core, Handle, Timeout};
 
-const DELAY: u64 = 5;
+const DELAY: u64 = 10;
 
 fn main() {
     if let Err(e) = run("output.log") {
@@ -37,15 +33,12 @@ fn main() {
 }
 
 fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
-    // make core
     let mut core = Core::new()?;
     let handle = core.handle();
     // log interval
     let (tx, rx) = mpsc::channel(100);
     let mut next_id = log::initial_event_id(&out_path);
 
-    let interval = interval(tx.clone(), &handle);
-    handle.spawn(interval);
     // spawn listen loop
     {
         let tx = tx.clone();
@@ -65,34 +58,21 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
                         .expect("write failed");
                     next_id += 1;
                 }
-                let t_out = timeout(tx.clone(), &handle, next_id);
-                handle.spawn(t_out);
+                handle.spawn(timeout(tx.clone(), &handle, next_id));
                 prev_i3_event = Some(e);
             }
-            LogEvent::Tick(id) => {}
-            // LogEvent::Tick(id) => {
-            //     if next_id == id {
-            //         if let Some(ref prev) = prev_i3_event {
-            //             Log::new(next_id, prev)
-            //                 .write(&mut writer)
-            //                 .expect("write failed");
-            //             next_id += 1;
-            //             prev_i3_event = Some(prev.new_time());
-            //         }
-            //         let t_out = timeout(tx.clone(), &handle, id);
-            //         handle.spawn(t_out);
-            //     }
-            // }
-            LogEvent::Interval => {
-                if let Some(ref prev) = prev_i3_event {
-                    if prev.start_time - Local::now() >= DELAY {
-                        Log::new(next_id, prev)
-                            .write(&mut writer)
-                            .expect("write failed");
-                        next_id += 1;
-                        prev_i3_event = Some(prev.new_time());
-                    }
+            LogEvent::Tick(id) => {
+                if next_id != id {
+                    return Ok(());
                 }
+                if let Some(ref prev) = prev_i3_event {
+                    Log::new(next_id, prev)
+                        .write(&mut writer)
+                        .expect("write failed");
+                    next_id += 1;
+                    prev_i3_event = Some(prev.new_time());
+                }
+                handle.spawn(timeout(tx.clone(), &handle, next_id));
             }
         }
         Ok(())
@@ -110,17 +90,6 @@ fn timeout(tx: Sender<LogEvent>, handle: &Handle, id: u32) -> impl Future<Item =
         })
 }
 
-fn interval(tx: Sender<LogEvent>, handle: &Handle) -> impl Future<Item = (), Error = ()> {
-    Interval::new(Duration::from_secs(30), &handle)
-        .unwrap()
-        .for_each(move |_| {
-            let tx_ = tx.clone();
-            tx_.send(LogEvent::Interval).wait().unwrap();
-            Ok(())
-        })
-        .map_err(|_| ())
-}
-
 fn listen_loop(tx: Sender<LogEvent>) -> Result<(), TrackErr> {
     let mut i3_listener = I3EventListener::connect()?;
     let (xorg_conn, _) = xcb::Connection::connect(None)?;
@@ -135,9 +104,6 @@ fn listen_loop(tx: Sender<LogEvent>) -> Result<(), TrackErr> {
             if window_id < 1 {
                 continue;
             }
-            // new window events get duplicated in the listen loop so we need
-            // to track a "new" event and ensure we only actually emit the title
-            // event
             match e.change {
                 WindowChange::New => {
                     prev_new_window_id = Some(window_id);
@@ -177,3 +143,14 @@ fn csv_writer<P: AsRef<Path>>(path: P) -> Result<Writer<File>, TrackErr> {
         .from_writer(file);
     Ok(wtr)
 }
+
+// fn interval(tx: Sender<LogEvent>, handle: &Handle) -> impl Future<Item = (),
+// Error = ()> {     Interval::new(Duration::from_secs(30), &handle)
+//         .unwrap()
+//         .for_each(move |_| {
+//             let tx_ = tx.clone();
+//             tx_.send(LogEvent::Interval).wait().unwrap();
+//             Ok(())
+//         })
+//         .map_err(|_| ())
+// }
