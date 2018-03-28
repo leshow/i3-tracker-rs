@@ -1,7 +1,6 @@
 use chrono::{DateTime, Local};
 use csv::{Reader, Writer};
 use error::TrackErr;
-use fs2::FileExt;
 use i3ipc::event::WindowEventInfo;
 use std::{fs::{File, OpenOptions}, io::{self, ErrorKind}, path::Path};
 use xcb;
@@ -31,9 +30,11 @@ impl I3LogEvent {
                 .unwrap_or_else(|| "Untitled".into()),
         }
     }
+
     pub fn update_time(&mut self) {
         self.start_time = Local::now();
     }
+
     pub fn new_time(&self) -> Self {
         I3LogEvent {
             start_time: Local::now(),
@@ -42,6 +43,7 @@ impl I3LogEvent {
             window_title: self.window_title.clone(),
         }
     }
+
     /*
      * pulled from:
      * https://stackoverflow.com/questions/44833160/how-do-i-get-the-x-window-class-given-a-window-id-with-rust-xcb
@@ -108,14 +110,15 @@ impl Log {
             end_time: now.format("%F %T").to_string(),
         }
     }
+
     pub fn write(&self, writer: &mut Writer<File>) -> Result<(), TrackErr> {
         writer.serialize(self)?;
         writer.flush()?;
         Ok(())
     }
+
     pub fn read<P: AsRef<Path>>(path: P) -> Result<Log, TrackErr> {
         if let Ok(f) = OpenOptions::new().read(true).open(path) {
-            f.try_lock_exclusive()?;
             let mut r = Reader::from_reader(f);
             if let Some(res) = r.deserialize().last() {
                 let log: Log = res?;

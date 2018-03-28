@@ -8,21 +8,24 @@ extern crate fs2;
 extern crate futures;
 extern crate serde;
 extern crate tokio_core;
+extern crate tokio_signal;
 extern crate xcb;
 
 mod error;
 mod log;
 
-pub use error::TrackErr;
+pub(crate) use error::TrackErr;
 pub(crate) use log::{I3LogEvent, Log, LogEvent};
 
 use csv::{Writer, WriterBuilder};
-use futures::prelude::*;
+use fs2::FileExt;
 use futures::sync::mpsc::{self, Sender};
+use futures::prelude::*;
 use i3ipc::{I3EventListener, Subscription, event::{Event, inner::WindowChange}};
 use std::fs::{File, OpenOptions};
 use std::{thread, path::Path, time::Duration};
 use tokio_core::reactor::{Core, Handle, Timeout};
+use tokio_signal::unix::{Signal, SIGINT, SIGTERM};
 
 const DELAY: u64 = 10;
 
@@ -31,6 +34,17 @@ fn main() {
         panic!("{:?}", e);
     };
 }
+fn sig_merge(h: &Handle) -> impl Future<Item = (), Error = ()> {
+    let int = Signal::new(SIGINT, h).flatten_stream().into_future();
+    let term = Signal::new(SIGTERM, h).flatten_stream().into_future();
+    int.select(term)
+        .map(|_| {
+            println!("CAUGHT!");
+            std::process::exit(0);
+            ()
+        })
+        .map_err(|_| ())
+}
 
 fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
     let mut core = Core::new()?;
@@ -38,6 +52,10 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
     // log interval
     let (tx, rx) = mpsc::channel(100);
     let mut next_id = log::initial_event_id(&out_path);
+
+    // handle SIGINT and SIGTERM
+    let sigint = sig_merge(&handle);
+    core.run(sigint).unwrap();
 
     // spawn listen loop
     {
@@ -83,7 +101,7 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
 
 fn timeout(tx: Sender<LogEvent>, handle: &Handle, id: u32) -> impl Future<Item = (), Error = ()> {
     Timeout::new(Duration::from_secs(DELAY), &handle)
-        .unwrap()
+        .expect("Timeout failed")
         .then(move |_| {
             tx.send(LogEvent::Tick(id)).wait().unwrap();
             Ok(())
@@ -138,6 +156,7 @@ fn csv_writer<P: AsRef<Path>>(path: P) -> Result<Writer<File>, TrackErr> {
         .create(true)
         .append(true)
         .open(path.as_ref())?;
+    file.try_lock_exclusive()?;
     let wtr = WriterBuilder::new()
         .has_headers(has_headers)
         .from_writer(file);
