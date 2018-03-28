@@ -1,5 +1,5 @@
 use super::tick;
-use super::track_i3;
+use super::track_i3::{self, I3LogEvent};
 use chrono::prelude::*;
 use csv::{Reader, Writer, WriterBuilder};
 use fs2::FileExt;
@@ -10,6 +10,7 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use std::time::Duration;
+use std::{io, io::ErrorKind};
 
 #[derive(Debug, Deserialize, Serialize)]
 struct Log {
@@ -38,7 +39,7 @@ impl Log {
                     end_time: now.format("%F %T").to_string(),
                 }
             }
-            _ => { unreachable!() }
+            _ => unreachable!(),
         }
     }
     fn write(&self, writer: &mut Writer<File>) -> Result<(), Box<Error>> {
@@ -46,17 +47,23 @@ impl Log {
         writer.flush()?;
         Ok(())
     }
+    fn read<P: AsRef<Path>>(path: P) -> Result<Log, Box<Error>> {
+        if let Ok(f) = OpenOptions::new().read(true).open(path) {
+            let mut r = Reader::from_reader(f);
+            if let Some(res) = r.deserialize().last() {
+                let log: Log = res?;
+                return Ok(log);
+            }
+        }
+        Err(io::Error::new(ErrorKind::NotFound, "output not found"))?
+    }
 }
 
-fn initial_event_id<P: AsRef<Path>>(path: P) -> Result<u32, Box<Error>> {
-    if let Ok(f) = OpenOptions::new().read(true).open(path) {
-        let mut r = Reader::from_reader(f);
-        if let Some(res) = r.deserialize().last() {
-            let log: Log = res?;
-            return Ok(log.id + 1);
-        }
+fn initial_event_id<P: AsRef<Path>>(path: P) -> u32 {
+    match Log::read(path) {
+        Ok(Log { id, .. }) => id + 1,
+        Err(_) => 1,
     }
-    Ok(1)
 }
 
 fn csv_writer<P: AsRef<Path>>(path: P) -> Result<Writer<File>, Box<Error>> {
@@ -86,13 +93,13 @@ pub fn run<P: AsRef<Path>>(out_path: P, tick_sleep: Duration) -> Result<(), Box<
         track_i3::run(track_i3_tx).unwrap();
     });
 
-    let mut next_event_id = initial_event_id(&out_path)?;
+    let mut next_event_id = initial_event_id(&out_path);
     let mut writer = csv_writer(&out_path)?;
     let mut prev_i3_event: Option<track_i3::I3LogEvent> = None;
     loop {
         let event = rx.recv()?;
-        match &event {
-            &LogEvent::I3Event(ref e) => {
+        match event {
+            LogEvent::I3Event(e) => {
                 if let Some(prev) = prev_i3_event {
                     let log = Log::new(next_event_id, &LogEvent::I3Event(prev));
                     log.write(&mut writer)?;
@@ -102,9 +109,9 @@ pub fn run<P: AsRef<Path>>(out_path: P, tick_sleep: Duration) -> Result<(), Box<
                 thread::spawn(move || {
                     tick::run(tick_tx, next_event_id, tick_sleep).unwrap();
                 });
-                prev_i3_event = Some(e.clone());
+                prev_i3_event = Some(e);
             }
-            &LogEvent::TickEvent(ref e) => {
+            LogEvent::TickEvent(e) => {
                 if next_event_id != e.0 {
                     continue;
                 }
@@ -112,7 +119,7 @@ pub fn run<P: AsRef<Path>>(out_path: P, tick_sleep: Duration) -> Result<(), Box<
                     let log = Log::new(next_event_id, &LogEvent::I3Event(prev.clone()));
                     log.write(&mut writer)?;
                     next_event_id += 1;
-                    prev_i3_event = Some(track_i3::I3LogEvent::from_tick(&prev));
+                    prev_i3_event = Some(I3LogEvent::from_tick(&prev));
                 }
                 let tick_tx = tx.clone();
                 thread::spawn(move || {
