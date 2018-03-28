@@ -4,6 +4,7 @@ extern crate csv;
 extern crate i3ipc;
 #[macro_use]
 extern crate serde_derive;
+extern crate fs2;
 extern crate futures;
 extern crate serde;
 extern crate tokio_core;
@@ -18,8 +19,7 @@ pub(crate) use log::{I3LogEvent, Log, LogEvent};
 use csv::{Writer, WriterBuilder};
 use futures::prelude::*;
 use futures::sync::mpsc::{self, Sender};
-use i3ipc::event::{Event, inner::WindowChange};
-use i3ipc::{I3EventListener, Subscription};
+use i3ipc::{I3EventListener, Subscription, event::{Event, inner::WindowChange}};
 use std::fs::{File, OpenOptions};
 use std::{thread, path::Path, time::Duration};
 use tokio_core::reactor::{Core, Handle, Timeout};

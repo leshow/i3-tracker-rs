@@ -1,10 +1,9 @@
 use chrono::{DateTime, Local};
 use csv::{Reader, Writer};
 use error::TrackErr;
+use fs2::FileExt;
 use i3ipc::event::WindowEventInfo;
-use std::fs::{File, OpenOptions};
-use std::io::{self, ErrorKind};
-use std::path::Path;
+use std::{fs::{File, OpenOptions}, io::{self, ErrorKind}, path::Path};
 use xcb;
 
 pub enum LogEvent {
@@ -116,6 +115,7 @@ impl Log {
     }
     pub fn read<P: AsRef<Path>>(path: P) -> Result<Log, TrackErr> {
         if let Ok(f) = OpenOptions::new().read(true).open(path) {
+            f.try_lock_exclusive()?;
             let mut r = Reader::from_reader(f);
             if let Some(res) = r.deserialize().last() {
                 let log: Log = res?;
