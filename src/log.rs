@@ -1,6 +1,9 @@
-use chrono::{DateTime, Local};
-use csv::{Reader, Writer};
 use error::TrackErr;
+use win;
+
+use chrono::{DateTime, Local};
+use csv::{Reader, Writer, WriterBuilder};
+use fs2::FileExt;
 use i3ipc::event::WindowEventInfo;
 use std::{fs::{File, OpenOptions}, io::{self, ErrorKind}, path::Path};
 use xcb;
@@ -20,11 +23,11 @@ pub struct I3Log {
 }
 
 impl I3Log {
-    pub fn new(window_id: u32, xorg_conn: &xcb::Connection, e: &WindowEventInfo) -> I3Log {
+    pub fn from_i3(window_id: u32, xorg_conn: &xcb::Connection, e: &WindowEventInfo) -> I3Log {
         I3Log {
             start_time: Local::now(),
             window_id,
-            window_class: I3Log::get_class(&xorg_conn, window_id as u32),
+            window_class: win::get_class(&xorg_conn, window_id as u32),
             window_title: e.container
                 .name
                 .clone()
@@ -39,46 +42,6 @@ impl I3Log {
             window_class: self.window_class.clone(),
             window_title: self.window_title.clone(),
         }
-    }
-
-    /*
-     * pulled from:
-     * https://stackoverflow.com/questions/44833160/how-do-i-get-the-x-window-class-given-a-window-id-with-rust-xcb
-     */
-    pub fn get_class(conn: &xcb::Connection, window_id: u32) -> String {
-        let long_length: u32 = 8;
-        let mut long_offset: u32 = 0;
-        let mut buf = Vec::new();
-        loop {
-            let cookie = xcb::xproto::get_property(
-                conn,
-                false,
-                window_id,
-                xcb::xproto::ATOM_WM_CLASS,
-                xcb::xproto::ATOM_STRING,
-                long_offset,
-                long_length,
-            );
-            match cookie.get_reply() {
-                Ok(reply) => {
-                    let value: &[u8] = reply.value();
-                    buf.extend_from_slice(value);
-                    match reply.bytes_after() {
-                        0 => break,
-                        _ => {
-                            let len = reply.value_len();
-                            long_offset += len / 4;
-                        }
-                    }
-                }
-                Err(_) => {
-                    break;
-                }
-            }
-        }
-        let result = String::from_utf8(buf).unwrap();
-        let results: Vec<_> = result.split('\0').collect();
-        results[0].to_string()
     }
 }
 
@@ -134,4 +97,17 @@ pub fn initial_event_id<P: AsRef<Path>>(path: P) -> u32 {
         Ok(Log { id, .. }) => id + 1,
         Err(_) => 1,
     }
+}
+
+pub fn writer<P: AsRef<Path>>(path: P) -> Result<Writer<File>, TrackErr> {
+    let has_headers = !Path::new(path.as_ref()).exists();
+    let file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path.as_ref())?;
+    file.try_lock_exclusive()?;
+    let wtr = WriterBuilder::new()
+        .has_headers(has_headers)
+        .from_writer(file);
+    Ok(wtr)
 }
