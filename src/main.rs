@@ -34,17 +34,6 @@ fn main() {
         panic!("{:?}", e);
     };
 }
-fn sig_merge(h: &Handle) -> impl Future<Item = (), Error = ()> {
-    let int = Signal::new(SIGINT, h).flatten_stream().into_future();
-    let term = Signal::new(SIGTERM, h).flatten_stream().into_future();
-    int.select(term)
-        .map(|_| {
-            println!("CAUGHT!");
-            std::process::exit(0);
-            ()
-        })
-        .map_err(|_| ())
-}
 
 fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
     let mut core = Core::new()?;
@@ -53,9 +42,8 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
     let (tx, rx) = mpsc::channel(100);
     let mut next_id = log::initial_event_id(&out_path);
 
-    // handle SIGINT and SIGTERM
-    let sigint = sig_merge(&handle);
-    core.run(sigint).unwrap();
+    // catch exit
+    handle.spawn(sigint(tx.clone(), &handle));
 
     // spawn listen loop
     {
@@ -92,6 +80,14 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
                     prev_i3_event = Some(prev.new_time());
                 }
                 handle.spawn(timeout(tx.clone(), &handle, next_id));
+            }
+            LogEvent::Flush => {
+                if let Some(ref prev) = prev_i3_event {
+                    Log::new(next_id, prev)
+                        .write(&mut writer)
+                        .expect("write failed");
+                }
+                std::process::exit(0);
             }
         }
         Ok(())
@@ -174,3 +170,26 @@ fn csv_writer<P: AsRef<Path>>(path: P) -> Result<Writer<File>, TrackErr> {
 //         })
 //         .map_err(|_| ())
 // }
+
+fn sigint(tx: Sender<LogEvent>, h: &Handle) -> impl Future<Item = (), Error = ()> {
+    tokio_signal::ctrl_c(&h)
+        .flatten_stream()
+        .for_each(move |()| {
+            let tx = tx.clone();
+            tx.send(LogEvent::Flush).wait().unwrap();
+            Ok(())
+        })
+        .map_err(|_| ())
+}
+
+fn sig_merge(tx: Sender<LogEvent>, h: &Handle) -> impl Future<Item = (), Error = ()> {
+    let int = Signal::new(SIGINT, h).flatten_stream().into_future();
+    let term = Signal::new(SIGTERM, h).flatten_stream().into_future();
+    int.select(term)
+        .map(move |_| {
+            let tx = tx.clone();
+            tx.send(LogEvent::Flush).wait().unwrap();
+            ()
+        })
+        .map_err(|_| ())
+}

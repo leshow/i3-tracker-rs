@@ -8,6 +8,7 @@ use xcb;
 pub enum LogEvent {
     I3Event(I3LogEvent),
     Tick(u32),
+    Flush,
 }
 
 #[derive(Debug, Clone)]
