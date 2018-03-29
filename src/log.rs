@@ -5,26 +5,26 @@ use i3ipc::event::WindowEventInfo;
 use std::{fs::{File, OpenOptions}, io::{self, ErrorKind}, path::Path};
 use xcb;
 
-pub enum LogEvent {
-    I3Event(I3LogEvent),
+pub enum Event {
+    I3(I3Log),
     Tick(u32),
     Flush,
 }
 
 #[derive(Debug, Clone)]
-pub struct I3LogEvent {
+pub struct I3Log {
     pub start_time: DateTime<Local>,
     pub window_id: u32,
     pub window_class: String,
     pub window_title: String,
 }
 
-impl I3LogEvent {
-    pub fn new(window_id: u32, xorg_conn: &xcb::Connection, e: &WindowEventInfo) -> I3LogEvent {
-        I3LogEvent {
+impl I3Log {
+    pub fn new(window_id: u32, xorg_conn: &xcb::Connection, e: &WindowEventInfo) -> I3Log {
+        I3Log {
             start_time: Local::now(),
             window_id,
-            window_class: I3LogEvent::get_class(&xorg_conn, window_id as u32),
+            window_class: I3Log::get_class(&xorg_conn, window_id as u32),
             window_title: e.container
                 .name
                 .clone()
@@ -32,12 +32,8 @@ impl I3LogEvent {
         }
     }
 
-    pub fn update_time(&mut self) {
-        self.start_time = Local::now();
-    }
-
-    pub fn new_time(&self) -> Self {
-        I3LogEvent {
+    pub fn new_start(&self) -> Self {
+        I3Log {
             start_time: Local::now(),
             window_id: self.window_id.clone(),
             window_class: self.window_class.clone(),
@@ -98,7 +94,7 @@ pub struct Log {
 }
 
 impl Log {
-    pub fn new(id: u32, e: &I3LogEvent) -> Log {
+    pub fn new(id: u32, e: &I3Log) -> Log {
         let now = Local::now();
         let elapsed = now.signed_duration_since(e.start_time);
         Log {

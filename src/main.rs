@@ -15,17 +15,16 @@ mod error;
 mod log;
 
 pub(crate) use error::TrackErr;
-pub(crate) use log::{I3LogEvent, Log, LogEvent};
+pub(crate) use log::{Event, I3Log, Log};
 
 use csv::{Writer, WriterBuilder};
 use fs2::FileExt;
 use futures::prelude::*;
 use futures::sync::mpsc::{self, Sender};
-use i3ipc::{I3EventListener, Subscription, event::{Event, inner::WindowChange}};
+use i3ipc::{I3EventListener, Subscription, event::{Event as WinEvent, inner::WindowChange}};
 use std::fs::{File, OpenOptions};
 use std::{thread, path::Path, time::Duration};
 use tokio_core::reactor::{Core, Handle, Timeout};
-use tokio_signal::unix::{Signal, SIGINT, SIGTERM};
 
 const DELAY: u64 = 10;
 
@@ -54,35 +53,35 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
     }
 
     let mut writer = csv_writer(&out_path)?;
-    let mut prev_i3_event: Option<I3LogEvent> = None;
+    let mut prev_i3log: Option<I3Log> = None;
     // consume events
     let f2 = rx.for_each(move |event| {
         match event {
-            LogEvent::I3Event(e) => {
-                if let Some(ref prev) = prev_i3_event {
+            | Event::I3(e) => {
+                if let Some(ref prev) = prev_i3log {
                     Log::new(next_id, prev)
                         .write(&mut writer)
                         .expect("write failed");
                     next_id += 1;
                 }
                 handle.spawn(timeout(tx.clone(), &handle, next_id));
-                prev_i3_event = Some(e);
+                prev_i3log = Some(e);
             }
-            LogEvent::Tick(id) => {
+            | Event::Tick(id) => {
                 if next_id != id {
                     return Ok(());
                 }
-                if let Some(ref prev) = prev_i3_event {
+                if let Some(ref prev) = prev_i3log {
                     Log::new(next_id, prev)
                         .write(&mut writer)
                         .expect("write failed");
                     next_id += 1;
-                    prev_i3_event = Some(prev.new_time());
+                    prev_i3log = Some(prev.new_start());
                 }
                 handle.spawn(timeout(tx.clone(), &handle, next_id));
             }
-            LogEvent::Flush => {
-                if let Some(ref prev) = prev_i3_event {
+            | Event::Flush => {
+                if let Some(ref prev) = prev_i3log {
                     Log::new(next_id, prev)
                         .write(&mut writer)
                         .expect("write failed");
@@ -96,25 +95,25 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
     Ok(())
 }
 
-fn timeout(tx: Sender<LogEvent>, handle: &Handle, id: u32) -> impl Future<Item = (), Error = ()> {
+fn timeout(tx: Sender<Event>, handle: &Handle, id: u32) -> impl Future<Item = (), Error = ()> {
     Timeout::new(Duration::from_secs(DELAY), &handle)
         .expect("Timeout failed")
         .then(move |_| {
-            tx.send(LogEvent::Tick(id)).wait().unwrap();
+            tx.send(Event::Tick(id)).wait().unwrap();
             Ok(())
         })
 }
 
-fn listen_loop(tx: Sender<LogEvent>) -> Result<(), TrackErr> {
+fn listen_loop(tx: Sender<Event>) -> Result<(), TrackErr> {
     let mut i3_listener = I3EventListener::connect()?;
     let (xorg_conn, _) = xcb::Connection::connect(None)?;
     let subs = [Subscription::Window];
     i3_listener.subscribe(&subs)?;
-    let mut prev_new_window_id: Option<i32> = None;
+    let mut prev_new_window_id = None;
 
     for event in i3_listener.listen() {
         let tx = tx.clone();
-        if let Event::WindowEvent(e) = event? {
+        if let WinEvent::WindowEvent(e) = event? {
             let window_id = e.container.window.unwrap_or(-1);
             if window_id < 1 {
                 continue;
@@ -137,8 +136,8 @@ fn listen_loop(tx: Sender<LogEvent>) -> Result<(), TrackErr> {
             prev_new_window_id = None;
             match e.change {
                 WindowChange::Focus | WindowChange::Title => {
-                    let event = I3LogEvent::new(window_id as u32, &xorg_conn, &e);
-                    tx.send(LogEvent::I3Event(event)).wait().unwrap();
+                    let log = I3Log::new(window_id as u32, &xorg_conn, &e);
+                    tx.send(Event::I3(log)).wait().unwrap();
                 }
                 _ => {}
             };
@@ -160,36 +159,13 @@ fn csv_writer<P: AsRef<Path>>(path: P) -> Result<Writer<File>, TrackErr> {
     Ok(wtr)
 }
 
-// fn interval(tx: Sender<LogEvent>, handle: &Handle) -> impl Future<Item = (),
-// Error = ()> {     Interval::new(Duration::from_secs(30), &handle)
-//         .unwrap()
-//         .for_each(move |_| {
-//             let tx_ = tx.clone();
-//             tx_.send(LogEvent::Interval).wait().unwrap();
-//             Ok(())
-//         })
-//         .map_err(|_| ())
-// }
-
-fn sigint(tx: Sender<LogEvent>, h: &Handle) -> impl Future<Item = (), Error = ()> {
+fn sigint(tx: Sender<Event>, h: &Handle) -> impl Future<Item = (), Error = ()> {
     tokio_signal::ctrl_c(&h)
         .flatten_stream()
         .for_each(move |()| {
             let tx = tx.clone();
-            tx.send(LogEvent::Flush).wait().unwrap();
+            tx.send(Event::Flush).wait().unwrap();
             Ok(())
-        })
-        .map_err(|_| ())
-}
-
-fn sig_merge(tx: Sender<LogEvent>, h: &Handle) -> impl Future<Item = (), Error = ()> {
-    let int = Signal::new(SIGINT, h).flatten_stream().into_future();
-    let term = Signal::new(SIGTERM, h).flatten_stream().into_future();
-    int.select(term)
-        .map(move |_| {
-            let tx = tx.clone();
-            tx.send(LogEvent::Flush).wait().unwrap();
-            ()
         })
         .map_err(|_| ())
 }
