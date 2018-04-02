@@ -54,7 +54,7 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
     // consume events
     let f2 = rx.for_each(move |event| {
         match event {
-            | Event::I3(e) => {
+            Event::I3(e) => {
                 if let Some(ref prev) = prev_i3log {
                     Log::new(next_id, prev)
                         .write(&mut writer)
@@ -64,7 +64,7 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
                 handle.spawn(timeout(tx.clone(), &handle, next_id));
                 prev_i3log = Some(e);
             }
-            | Event::Tick(id) => {
+            Event::Tick(id) => {
                 if next_id != id {
                     return Ok(());
                 }
@@ -77,7 +77,7 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
                 }
                 handle.spawn(timeout(tx.clone(), &handle, next_id));
             }
-            | Event::Flush => {
+            Event::Flush => {
                 if let Some(ref prev) = prev_i3log {
                     Log::new(next_id, prev)
                         .write(&mut writer)
