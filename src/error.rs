@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fmt;
 use std::io;
 use xcb;
+use xdg;
 
 #[derive(Debug)]
 pub enum TrackErr {
@@ -12,6 +13,7 @@ pub enum TrackErr {
     Xcb(xcb::ConnError),
     IpcMsg(i3ipc::MessageError),
     IpcConn(i3ipc::EstablishError),
+    BaseDir(xdg::BaseDirectoriesError),
 }
 
 impl From<csv::Error> for TrackErr {
@@ -44,6 +46,12 @@ impl From<i3ipc::EstablishError> for TrackErr {
     }
 }
 
+impl From<xdg::BaseDirectoriesError> for TrackErr {
+    fn from(e: xdg::BaseDirectoriesError) -> TrackErr {
+        TrackErr::BaseDir(e)
+    }
+}
+
 impl Error for TrackErr {
     fn description(&self) -> &str {
         match *self {
@@ -52,6 +60,7 @@ impl Error for TrackErr {
             TrackErr::Xcb(ref e) => e.description(),
             TrackErr::IpcMsg(ref e) => e.description(),
             TrackErr::IpcConn(ref e) => e.description(),
+            TrackErr::BaseDir(ref e) => e.description(),
         }
     }
     fn cause(&self) -> Option<&Error> {
@@ -61,6 +70,7 @@ impl Error for TrackErr {
             TrackErr::Xcb(ref e) => Some(e),
             TrackErr::IpcMsg(ref e) => Some(e),
             TrackErr::IpcConn(ref e) => Some(e),
+            TrackErr::BaseDir(ref e) => Some(e),
         }
     }
 }
@@ -73,6 +83,7 @@ impl fmt::Display for TrackErr {
             TrackErr::Xcb(ref e) => write!(f, "xcb connection error: {}", e),
             TrackErr::IpcMsg(ref e) => write!(f, "i3ipc message error: {}", e),
             TrackErr::IpcConn(ref e) => write!(f, "i3ipc connection establishment error: {}", e),
+            TrackErr::BaseDir(ref e) => write!(f, "XDG dirs not found: {}", e),
         }
     }
 }

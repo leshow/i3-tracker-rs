@@ -10,6 +10,7 @@ extern crate serde;
 extern crate tokio_core;
 extern crate tokio_signal;
 extern crate xcb;
+extern crate xdg;
 
 mod error;
 mod log;
@@ -20,25 +21,30 @@ pub(crate) use log::{Event, I3Log, Log};
 
 use futures::prelude::*;
 use futures::sync::mpsc::{self, Sender};
-use std::{thread, path::Path, time::Duration};
+use std::{thread, time::Duration};
 use tokio_core::reactor::{Core, Handle, Timeout};
 
 const TIMEOUT_DELAY: u64 = 10;
+const LOG_BASE_NAME: &'static str = "i3tracker.log";
 
 fn main() {
-    if let Err(e) = run("output.log") {
+    if let Err(e) = run() {
         panic!("{}", e);
     };
 }
 
-fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
+fn run() -> Result<(), TrackErr> {
+    // get data dir
+    let xdg_dirs = xdg::BaseDirectories::with_prefix("i3tracker")?;
+    let log_path = xdg_dirs.place_data_file(LOG_BASE_NAME)?;
+
     let mut core = Core::new()?;
     let handle = core.handle();
     // log interval
     let (tx, rx) = mpsc::channel(100);
-    let mut next_id = log::initial_event_id(&out_path);
+    let mut next_id = log::initial_event_id(&log_path);
 
-    // catch exit
+    // catch exit & write to log
     handle.spawn(sigint(tx.clone(), &handle));
 
     // spawn listen loop
@@ -49,7 +55,7 @@ fn run<P: AsRef<Path>>(out_path: P) -> Result<(), TrackErr> {
         });
     }
 
-    let mut writer = log::writer(&out_path)?;
+    let mut writer = log::writer(&log_path)?;
     let mut prev_i3log: Option<I3Log> = None;
     // consume events
     let f2 = rx.for_each(move |event| {
