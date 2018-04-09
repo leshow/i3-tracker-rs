@@ -21,7 +21,7 @@ pub(crate) use log::{Event, I3Log, Log};
 
 use futures::prelude::*;
 use futures::sync::mpsc::{self, Sender};
-use std::{thread, time::Duration};
+use std::{io, thread, time::Duration};
 use tokio_core::reactor::{Core, Handle, Timeout};
 
 const TIMEOUT_DELAY: u64 = 10;
@@ -101,19 +101,22 @@ fn run() -> Result<(), TrackErr> {
 fn timeout(tx: Sender<Event>, handle: &Handle, id: u32) -> impl Future<Item = (), Error = ()> {
     Timeout::new(Duration::from_secs(TIMEOUT_DELAY), &handle)
         .expect("Timeout failed")
-        .then(move |_| {
-            tx.send(Event::Tick(id)).wait().unwrap();
-            Ok(())
+        .and_then(move |_| {
+            tx.send(Event::Tick(id))
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
         })
+        .map(|_| ())
+        .map_err(|_| ())
 }
 
 fn sigint(tx: Sender<Event>, h: &Handle) -> impl Future<Item = (), Error = ()> {
     tokio_signal::ctrl_c(&h)
         .flatten_stream()
-        .for_each(move |()| {
+        .for_each(move |_| {
             let tx = tx.clone();
-            tx.send(Event::Flush).wait().unwrap();
-            Ok(())
+            tx.send(Event::Flush)
+                .map(|_| ())
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
         })
         .map_err(|_| ())
 }
