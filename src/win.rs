@@ -1,8 +1,10 @@
 use error::TrackErr;
 use log::{Event, I3Log};
 
-use futures::{Future, Sink, sync::mpsc::Sender};
-use i3ipc::{I3EventListener, Subscription, event::{Event as WinEvent, inner::WindowChange}};
+use futures::{sync::mpsc::Sender, Future, Sink};
+use i3ipc::{
+    event::{inner::WindowChange, Event as WinEvent}, I3EventListener, Subscription,
+};
 use xcb;
 
 pub fn listen_loop(tx: Sender<Event>) -> Result<(), TrackErr> {

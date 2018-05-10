@@ -1,4 +1,3 @@
-#![feature(nll)]
 extern crate chrono;
 extern crate csv;
 extern crate i3ipc;
@@ -74,12 +73,19 @@ fn run() -> Result<(), TrackErr> {
                 if next_id != id {
                     return Ok(());
                 }
-                if let Some(ref prev) = prev_i3log {
-                    Log::new(next_id, prev)
-                        .write(&mut writer)
-                        .expect("write failed");
-                    next_id += 1;
-                    prev_i3log = Some(prev.new_start());
+                // dirty borrowck hack
+                let prev_outer = match prev_i3log {
+                    Some(ref prev) => {
+                        Log::new(next_id, &prev)
+                            .write(&mut writer)
+                            .expect("write failed");
+                        next_id += 1;
+                        Some(prev.new_start()) // b/c prev_i3log is borrowed in here we can't re-assign
+                    }
+                    None => None,
+                };
+                if let Some(prev) = prev_outer {
+                    prev_i3log = Some(prev);
                 }
                 handle.spawn(timeout(tx.clone(), &handle, next_id));
             }

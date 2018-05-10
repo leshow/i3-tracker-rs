@@ -5,7 +5,9 @@ use chrono::{DateTime, Local};
 use csv::{Reader, Writer, WriterBuilder};
 use fs2::FileExt;
 use i3ipc::event::WindowEventInfo;
-use std::{fs::{File, OpenOptions}, io::{self, ErrorKind}, path::Path};
+use std::{
+    fs::{File, OpenOptions}, io::{self, ErrorKind}, path::Path,
+};
 use xcb;
 
 pub enum Event {
@@ -27,7 +29,7 @@ impl I3Log {
         I3Log {
             start_time: Local::now(),
             window_id,
-            window_class: win::get_class(&xorg_conn, window_id as u32),
+            window_class: win::get_class(xorg_conn, window_id as u32),
             window_title: e.container
                 .name
                 .clone()
@@ -38,7 +40,7 @@ impl I3Log {
     pub fn new_start(&self) -> Self {
         I3Log {
             start_time: Local::now(),
-            window_id: self.window_id.clone(),
+            window_id: self.window_id,
             window_class: self.window_class.clone(),
             window_title: self.window_title.clone(),
         }
