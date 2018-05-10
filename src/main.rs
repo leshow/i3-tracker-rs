@@ -26,13 +26,7 @@ use tokio_core::reactor::{Core, Handle, Timeout};
 const TIMEOUT_DELAY: u64 = 10;
 const LOG_BASE_NAME: &'static str = "i3tracker.log";
 
-fn main() {
-    if let Err(e) = run() {
-        panic!("{}", e);
-    };
-}
-
-fn run() -> Result<(), TrackErr> {
+fn main() -> Result<(), TrackErr> {
     // get data dir
     let xdg_dirs = xdg::BaseDirectories::with_prefix("i3tracker")?;
     let log_path = xdg_dirs.place_data_file(LOG_BASE_NAME)?;
