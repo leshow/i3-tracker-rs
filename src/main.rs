@@ -121,36 +121,28 @@ fn sigint(tx: Sender<Event>, h: &Handle) -> impl Future<Item = (), Error = ()> {
         .map_err(|_| ())
 }
 
-use std::fs::read_dir;
-use std::path::Path;
-use std::time::SystemTime;
+use std::{fs::read_dir, path::Path};
 
 fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<(), TrackErr> {
     let contents = read_dir(dir)?;
-    let now = SystemTime::now();
-    let files = Vec::new();
+    let mut files = Vec::new();
 
     for entry in contents {
         let entry = entry?;
         let path = entry.path();
-        if path.file_stem()?.to_str()?.starts_with(LOG_BASE_NAME) {
-            files.push((path, path.metadata()?.created()?));
+        if path.file_stem()
+            .map(|h| {
+                h.to_str()
+                    .map(|g| g.starts_with(LOG_BASE_NAME))
+                    .unwrap_or(false)
+            })
+            .unwrap_or(false)
+        {
+            let cr = path.metadata()?.created()?;
+            files.push((path, cr));
         }
     }
     files.sort_by(|a, b| (a.1).cmp(&b.1));
-
-    let log_files = contents
-        .filter_map(|f| f.ok().map(|g| g.path()))
-        .filter(|f| {
-            f.file_stem()
-                .map(|h| {
-                    h.to_str()
-                        .map(|g| g.starts_with(LOG_BASE_NAME))
-                        .unwrap_or(false)
-                })
-                .unwrap_or(false)
-        })
-        .collect::<Vec<_>>();
 
     Ok(())
 }
