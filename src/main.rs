@@ -18,18 +18,18 @@ mod win;
 pub(crate) use error::TrackErr;
 pub(crate) use log::{Event, I3Log, Log};
 
-use futures::prelude::*;
-use futures::sync::mpsc::{self, Sender};
-use std::{io, thread, time::Duration};
-use tokio_core::reactor::{Core, Handle, Timeout};
+use {futures::prelude::*,
+     futures::sync::mpsc::{self, Sender},
+     std::{io, thread, time::Duration},
+     tokio_core::reactor::{Core, Handle, Timeout}};
 
 const TIMEOUT_DELAY: u64 = 10;
-const LOG_BASE_NAME: &'static str = "i3tracker.log";
+const LOG_BASE_NAME: &'static str = "i3tracker";
 
 fn main() -> Result<(), TrackErr> {
     // get data dir
-    let xdg_dirs = xdg::BaseDirectories::with_prefix("i3tracker")?;
-    let log_path = xdg_dirs.place_data_file(LOG_BASE_NAME)?;
+    let xdg_dir = xdg::BaseDirectories::with_prefix(LOG_BASE_NAME)?;
+    let log_path = xdg_dir.place_data_file(format!("{}{}", LOG_BASE_NAME, ".log"))?;
 
     let mut core = Core::new()?;
     let handle = core.handle();
@@ -119,4 +119,38 @@ fn sigint(tx: Sender<Event>, h: &Handle) -> impl Future<Item = (), Error = ()> {
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
         })
         .map_err(|_| ())
+}
+
+use std::fs::read_dir;
+use std::path::Path;
+use std::time::SystemTime;
+
+fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<(), TrackErr> {
+    let contents = read_dir(dir)?;
+    let now = SystemTime::now();
+    let files = Vec::new();
+
+    for entry in contents {
+        let entry = entry?;
+        let path = entry.path();
+        if path.file_stem()?.to_str()?.starts_with(LOG_BASE_NAME) {
+            files.push((path, path.metadata()?.created()?));
+        }
+    }
+    files.sort_by(|a, b| (a.1).cmp(&b.1));
+
+    let log_files = contents
+        .filter_map(|f| f.ok().map(|g| g.path()))
+        .filter(|f| {
+            f.file_stem()
+                .map(|h| {
+                    h.to_str()
+                        .map(|g| g.starts_with(LOG_BASE_NAME))
+                        .unwrap_or(false)
+                })
+                .unwrap_or(false)
+        })
+        .collect::<Vec<_>>();
+
+    Ok(())
 }

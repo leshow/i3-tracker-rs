@@ -1,10 +1,8 @@
-use csv;
-use i3ipc;
-use std::error::Error;
-use std::fmt;
-use std::io;
-use xcb;
-use xdg;
+use {csv,
+     i3ipc,
+     std::{error::Error, fmt, io, option},
+     xcb,
+     xdg};
 
 #[derive(Debug)]
 pub enum TrackErr {
@@ -14,6 +12,7 @@ pub enum TrackErr {
     IpcMsg(i3ipc::MessageError),
     IpcConn(i3ipc::EstablishError),
     BaseDir(xdg::BaseDirectoriesError),
+    NoneError(option::NoneError),
 }
 
 impl From<csv::Error> for TrackErr {
@@ -52,6 +51,12 @@ impl From<xdg::BaseDirectoriesError> for TrackErr {
     }
 }
 
+impl From<option::NoneError> for TrackErr {
+    fn from(e: option::NoneError) -> TrackErr {
+        TrackErr::NoneError(e)
+    }
+}
+
 impl Error for TrackErr {
     fn description(&self) -> &str {
         match *self {
@@ -61,6 +66,7 @@ impl Error for TrackErr {
             TrackErr::IpcMsg(ref e) => e.description(),
             TrackErr::IpcConn(ref e) => e.description(),
             TrackErr::BaseDir(ref e) => e.description(),
+            TrackErr::NoneError(ref e) =>
         }
     }
     fn cause(&self) -> Option<&Error> {

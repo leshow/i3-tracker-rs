@@ -1,11 +1,11 @@
-use error::TrackErr;
-use log::{Event, I3Log};
+use {error::TrackErr,
+     log::{Event, I3Log}};
 
-use futures::{sync::mpsc::Sender, Future, Sink};
-use i3ipc::{
-    event::{inner::WindowChange, Event as WinEvent}, I3EventListener, Subscription,
-};
-use xcb;
+use {futures::{sync::mpsc::Sender, Future, Sink},
+     i3ipc::{event::{inner::WindowChange, Event as WinEvent},
+             I3EventListener,
+             Subscription},
+     xcb};
 
 pub fn listen_loop(tx: Sender<Event>) -> Result<(), TrackErr> {
     let mut i3_listener = I3EventListener::connect()?;
