@@ -18,21 +18,20 @@ mod win;
 pub(crate) use error::TrackErr;
 pub(crate) use log::{Event, I3Log, Log};
 
-use {futures::prelude::*,
-     futures::sync::mpsc::{self, Sender},
-     std::{io, thread, time::Duration},
-     tokio_core::reactor::{Core, Handle, Timeout}};
+use {
+    futures::prelude::*, futures::sync::mpsc::{self, Sender}, std::{io, thread, time::Duration},
+    tokio_core::reactor::{Core, Handle, Timeout},
+};
 
 const TIMEOUT_DELAY: u64 = 10;
+const LOG_LIMIT: usize = 10;
 const LOG_BASE_NAME: &'static str = "i3tracker";
 
 fn main() -> Result<(), TrackErr> {
-    // get data dir
-    let xdg_dir = xdg::BaseDirectories::with_prefix(LOG_BASE_NAME)?;
-    let log_path = xdg_dir.place_data_file(format!("{}{}", LOG_BASE_NAME, ".log"))?;
-
     let mut core = Core::new()?;
     let handle = core.handle();
+
+    let log_path = setup_log()?;
     // log interval
     let (tx, rx) = mpsc::channel(100);
     let mut next_id = log::initial_event_id(&log_path);
@@ -121,10 +120,18 @@ fn sigint(tx: Sender<Event>, h: &Handle) -> impl Future<Item = (), Error = ()> {
         .map_err(|_| ())
 }
 
-use std::{fs::read_dir, path::Path};
+use std::{ffi::OsStr, fs, path::Path};
 
-fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<(), TrackErr> {
-    let contents = read_dir(dir)?;
+fn setup_log() -> Result<impl AsRef<Path>, TrackErr> {
+    // get data dir
+    let xdg_dir = xdg::BaseDirectories::with_prefix(LOG_BASE_NAME)?;
+    let cur_log = rotate(xdg_dir.get_data_home().as_path(), LOG_LIMIT)?;
+
+    Ok(xdg_dir.place_data_file(format!("{}{}.{}", LOG_BASE_NAME, ".log", cur_log))?)
+}
+
+fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
+    let contents = fs::read_dir(dir)?;
     let mut files = Vec::new();
 
     for entry in contents {
@@ -138,11 +145,21 @@ fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<(), TrackErr> {
             })
             .unwrap_or(false)
         {
-            let cr = path.metadata()?.created()?;
-            files.push((path, cr));
+            let modif = path.metadata()?.modified()?;
+            files.push((path, modif));
         }
     }
     files.sort_by(|a, b| (a.1).cmp(&b.1));
+    println!("{:?}", files);
+    if files.len() >= num {
+        // let remove = files.split_off(num);
+        // remove
+        //     .iter()
+        //     .map(|(p, _)| fs::remove_file(p))
+        //     .collect::<Result<_, _>>()?;
 
-    Ok(())
+        Ok(0)
+    } else {
+        Ok(files.len())
+    }
 }
