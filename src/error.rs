@@ -1,8 +1,6 @@
-use {csv,
-     i3ipc,
-     std::{error::Error, fmt, io},
-     xcb,
-     xdg};
+use {
+    csv, i3ipc, std::{error::Error, fmt, io, time}, xcb, xdg,
+};
 
 #[derive(Debug)]
 pub enum TrackErr {
@@ -12,6 +10,7 @@ pub enum TrackErr {
     IpcMsg(i3ipc::MessageError),
     IpcConn(i3ipc::EstablishError),
     BaseDir(xdg::BaseDirectoriesError),
+    TimeErr(time::SystemTimeError),
 }
 
 impl From<csv::Error> for TrackErr {
@@ -50,6 +49,12 @@ impl From<xdg::BaseDirectoriesError> for TrackErr {
     }
 }
 
+impl From<time::SystemTimeError> for TrackErr {
+    fn from(e: time::SystemTimeError) -> TrackErr {
+        TrackErr::TimeErr(e)
+    }
+}
+
 impl Error for TrackErr {
     fn description(&self) -> &str {
         match *self {
@@ -59,6 +64,7 @@ impl Error for TrackErr {
             TrackErr::IpcMsg(ref e) => e.description(),
             TrackErr::IpcConn(ref e) => e.description(),
             TrackErr::BaseDir(ref e) => e.description(),
+            TrackErr::TimeErr(ref e) => e.description(),
         }
     }
     fn cause(&self) -> Option<&Error> {
@@ -69,6 +75,7 @@ impl Error for TrackErr {
             TrackErr::IpcMsg(ref e) => Some(e),
             TrackErr::IpcConn(ref e) => Some(e),
             TrackErr::BaseDir(ref e) => Some(e),
+            TrackErr::TimeErr(ref e) => Some(e),
         }
     }
 }
@@ -76,12 +83,13 @@ impl Error for TrackErr {
 impl fmt::Display for TrackErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            TrackErr::Io(ref e) => write!(f, "io error: {}", e),
-            TrackErr::Csv(ref e) => write!(f, "csv error: {}", e),
-            TrackErr::Xcb(ref e) => write!(f, "xcb connection error: {}", e),
-            TrackErr::IpcMsg(ref e) => write!(f, "i3ipc message error: {}", e),
-            TrackErr::IpcConn(ref e) => write!(f, "i3ipc connection establishment error: {}", e),
-            TrackErr::BaseDir(ref e) => write!(f, "XDG dirs not found: {}", e),
+            TrackErr::Io(ref e) => write!(f, "io error: {:#?}", e),
+            TrackErr::Csv(ref e) => write!(f, "csv error: {:#?}", e),
+            TrackErr::Xcb(ref e) => write!(f, "xcb connection error: {:#?}", e),
+            TrackErr::IpcMsg(ref e) => write!(f, "i3ipc message error: {:#?}", e),
+            TrackErr::IpcConn(ref e) => write!(f, "i3ipc connection establishment error: {:#?}", e),
+            TrackErr::BaseDir(ref e) => write!(f, "XDG dirs not found: {:#?}", e),
+            TrackErr::TimeErr(ref e) => write!(f, "Can't get system time: {:#?}", e),
         }
     }
 }

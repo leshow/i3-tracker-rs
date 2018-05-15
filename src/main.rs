@@ -120,7 +120,7 @@ fn sigint(tx: Sender<Event>, h: &Handle) -> impl Future<Item = (), Error = ()> {
         .map_err(|_| ())
 }
 
-use std::{ffi::OsStr, fs, path::Path};
+use std::{fs, path::Path};
 
 fn setup_log() -> Result<impl AsRef<Path>, TrackErr> {
     // get data dir
@@ -131,10 +131,9 @@ fn setup_log() -> Result<impl AsRef<Path>, TrackErr> {
 }
 
 fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
-    let contents = fs::read_dir(dir)?;
     let mut files = Vec::new();
 
-    for entry in contents {
+    for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
         if path.file_stem()
@@ -145,19 +144,21 @@ fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
             })
             .unwrap_or(false)
         {
-            let modif = path.metadata()?.modified()?;
+            let modif = path.metadata()?.modified()?.elapsed()?.as_secs();
             files.push((path, modif));
         }
     }
-    files.sort_by(|a, b| (a.1).cmp(&b.1));
-    println!("{:?}", files);
-    if files.len() >= num {
-        // let remove = files.split_off(num);
-        // remove
-        //     .iter()
-        //     .map(|(p, _)| fs::remove_file(p))
-        //     .collect::<Result<_, _>>()?;
 
+    if files.len() >= num {
+        files.sort_by(|a, b| (a.1).cmp(&b.1));
+
+        if let Some((last, _)) = files.first() {
+            if let Some(Some(Ok(n))) = last.extension()
+                .map(|c| c.to_str().map(|c| c.to_owned().parse::<usize>()))
+            {
+                return Ok(n + 1);
+            }
+        }
         Ok(0)
     } else {
         Ok(files.len())
