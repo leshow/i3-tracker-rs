@@ -1,14 +1,13 @@
 use error::TrackErr;
 use win;
 
-use {chrono::{DateTime, Local},
-     csv::{Reader, Writer, WriterBuilder},
-     fs2::FileExt,
-     i3ipc::event::WindowEventInfo,
-     std::{fs::{File, OpenOptions},
-           io::{self, ErrorKind},
-           path::Path},
-     xcb};
+use {
+    chrono::{DateTime, Local}, csv::{Reader, Writer, WriterBuilder}, fs2::FileExt,
+    i3ipc::event::WindowEventInfo,
+    std::{
+        fs::{File, OpenOptions}, io::{self, ErrorKind}, path::Path,
+    }, xcb,
+};
 
 pub enum Event {
     I3(I3Log),
