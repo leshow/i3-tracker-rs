@@ -19,7 +19,9 @@ pub(crate) use error::TrackErr;
 pub(crate) use log::{Event, I3Log, Log};
 
 use {
-    futures::prelude::*, futures::sync::mpsc::{self, Sender}, std::{io, thread, time::Duration},
+    futures::prelude::*,
+    futures::sync::mpsc::{self, Sender},
+    std::{io, thread, time::Duration},
     tokio_core::reactor::{Core, Handle, Timeout},
 };
 
@@ -136,7 +138,8 @@ fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.file_stem()
+        if path
+            .file_stem()
             .map(|h| {
                 h.to_str()
                     .map(|g| g.starts_with(LOG_BASE_NAME))
@@ -153,7 +156,8 @@ fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
         files.sort_by(|a, b| (a.1).cmp(&b.1));
 
         if let Some((last, _)) = files.first() {
-            if let Some(Some(Ok(n))) = last.extension()
+            if let Some(Some(Ok(n))) = last
+                .extension()
                 .map(|c| c.to_str().map(|c| c.to_owned().parse::<usize>()))
             {
                 return Ok(n + 1);

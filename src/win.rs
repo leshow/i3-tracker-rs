@@ -1,11 +1,13 @@
 use {
-    error::TrackErr, log::{Event, I3Log},
+    error::TrackErr,
+    log::{Event, I3Log},
 };
 
 use {
     futures::{sync::mpsc::Sender, Future, Sink},
     i3ipc::{
-        event::{inner::WindowChange, Event as WinEvent}, I3EventListener, Subscription,
+        event::{inner::WindowChange, Event as WinEvent},
+        I3EventListener, Subscription,
     },
     xcb,
 };

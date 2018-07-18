@@ -2,11 +2,16 @@ use error::TrackErr;
 use win;
 
 use {
-    chrono::{DateTime, Local}, csv::{Reader, Writer, WriterBuilder}, fs2::FileExt,
+    chrono::{DateTime, Local},
+    csv::{Reader, Writer, WriterBuilder},
+    fs2::FileExt,
     i3ipc::event::WindowEventInfo,
     std::{
-        fs::{File, OpenOptions}, io::{self, ErrorKind}, path::Path,
-    }, xcb,
+        fs::{File, OpenOptions},
+        io::{self, ErrorKind},
+        path::Path,
+    },
+    xcb,
 };
 
 pub enum Event {
@@ -29,7 +34,8 @@ impl I3Log {
             start_time: Local::now(),
             window_id,
             window_class: win::get_class(xorg_conn, window_id as u32),
-            window_title: e.container
+            window_title: e
+                .container
                 .name
                 .clone()
                 .unwrap_or_else(|| "Untitled".into()),

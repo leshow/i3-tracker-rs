@@ -1,5 +1,7 @@
 use {
-    csv, i3ipc, std::{error::Error, fmt, io, time}, xcb, xdg,
+    csv, i3ipc,
+    std::{error::Error, fmt, io, time},
+    xcb, xdg,
 };
 
 #[derive(Debug)]
