@@ -105,8 +105,7 @@ fn timeout(tx: Sender<Event>, handle: &Handle, id: u32) -> impl Future<Item = ()
         .and_then(move |_| {
             tx.send(Event::Tick(id))
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-        })
-        .map(|_| ())
+        }).map(|_| ())
         .map_err(|_| ())
 }
 
@@ -118,8 +117,7 @@ fn sigint(tx: Sender<Event>, h: &Handle) -> impl Future<Item = (), Error = ()> {
             tx.send(Event::Flush)
                 .map(|_| ())
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-        })
-        .map_err(|_| ())
+        }).map_err(|_| ())
 }
 
 use std::{fs, path::Path};
@@ -144,8 +142,7 @@ fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
                 h.to_str()
                     .map(|g| g.starts_with(LOG_BASE_NAME))
                     .unwrap_or(false)
-            })
-            .unwrap_or(false)
+            }).unwrap_or(false)
         {
             let modif = path.metadata()?.modified()?.elapsed()?.as_secs();
             files.push((path, modif));
