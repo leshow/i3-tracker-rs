@@ -15,8 +15,8 @@ mod error;
 mod log;
 mod win;
 
-pub(crate) use error::TrackErr;
-pub(crate) use log::{Event, I3Log, Log};
+pub(crate) use crate::error::TrackErr;
+pub(crate) use crate::log::{Event, I3Log, Log};
 
 use {
     futures::prelude::*,
