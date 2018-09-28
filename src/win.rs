@@ -12,7 +12,7 @@ use {
     xcb,
 };
 
-pub fn listen_loop(tx: Sender<Event>) -> Result<(), TrackErr> {
+pub fn listen_loop(tx: &Sender<Event>) -> Result<(), TrackErr> {
     let mut i3_listener = I3EventListener::connect()?;
     let (xorg_conn, _) = xcb::Connection::connect(None)?;
     let subs = [Subscription::Window];

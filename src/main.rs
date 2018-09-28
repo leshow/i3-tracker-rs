@@ -2,8 +2,6 @@
 
 #[macro_use]
 extern crate serde_derive;
-#[macro_use]
-extern crate tokio;
 
 mod error;
 mod log;
@@ -43,14 +41,14 @@ fn main() -> Result<(), TrackErr> {
     {
         let tx = tx.clone();
         thread::spawn(move || {
-            win::listen_loop(tx).unwrap();
+            win::listen_loop(&tx).unwrap();
         });
     }
-
     let mut writer = log::writer(&log_path)?;
     let mut prev_i3log: Option<I3Log> = None;
     // consume events
     let handle: Handle = rt.handle();
+
     let f2 = rx.for_each(move |event| {
         match event {
             Event::I3(e) => {
