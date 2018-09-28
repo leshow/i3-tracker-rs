@@ -1,45 +1,43 @@
-extern crate chrono;
-extern crate csv;
-extern crate i3ipc;
+#![feature(await_macro, async_await, futures_api)]
+
 #[macro_use]
 extern crate serde_derive;
-extern crate fs2;
-extern crate futures;
-extern crate serde;
-extern crate tokio_core;
-extern crate tokio_signal;
-extern crate xcb;
-extern crate xdg;
+#[macro_use]
+extern crate tokio;
 
 mod error;
 mod log;
 mod win;
 
-pub(crate) use crate::error::TrackErr;
-pub(crate) use crate::log::{Event, I3Log, Log};
+pub(crate) use crate::{
+    error::TrackErr,
+    log::{Event, I3Log, Log},
+};
 
 use {
     futures::prelude::*,
     futures::sync::mpsc::{self, Sender},
-    std::{io, thread, time::Duration},
-    tokio_core::reactor::{Core, Handle, Timeout},
+    std::{
+        io, thread,
+        time::{Duration, Instant},
+    },
+    tokio::runtime::current_thread::Handle,
+    tokio::timer::Delay,
 };
 
 const TIMEOUT_DELAY: u64 = 10;
 const LOG_LIMIT: usize = 10;
-const LOG_BASE_NAME: &'static str = "i3tracker";
+const LOG_BASE_NAME: &str = "i3tracker";
 
 fn main() -> Result<(), TrackErr> {
-    let mut core = Core::new()?;
-    let handle = core.handle();
-
     let log_path = setup_log()?;
     // log interval
-    let (tx, rx) = mpsc::channel(100);
+    let (tx, rx) = mpsc::channel(50);
     let mut next_id = log::initial_event_id(&log_path);
 
     // catch exit & write to log
-    handle.spawn(sigint(tx.clone(), &handle));
+    let mut rt = tokio::runtime::current_thread::Runtime::new().expect("Failed building runtime");
+    rt.spawn(sigint(tx.clone()));
 
     // spawn listen loop
     {
@@ -52,6 +50,7 @@ fn main() -> Result<(), TrackErr> {
     let mut writer = log::writer(&log_path)?;
     let mut prev_i3log: Option<I3Log> = None;
     // consume events
+    let handle: Handle = rt.handle();
     let f2 = rx.for_each(move |event| {
         match event {
             Event::I3(e) => {
@@ -61,7 +60,8 @@ fn main() -> Result<(), TrackErr> {
                         .expect("write failed");
                     next_id += 1;
                 }
-                handle.spawn(timeout(tx.clone(), &handle, next_id));
+
+                handle.spawn(timeout(tx.clone(), next_id));
                 prev_i3log = Some(e);
             }
             Event::Tick(id) => {
@@ -82,7 +82,7 @@ fn main() -> Result<(), TrackErr> {
                 if let Some(prev) = prev_outer {
                     prev_i3log = Some(prev);
                 }
-                handle.spawn(timeout(tx.clone(), &handle, next_id));
+                handle.spawn(timeout(tx.clone(), next_id));
             }
             Event::Flush => {
                 if let Some(ref prev) = prev_i3log {
@@ -95,29 +95,30 @@ fn main() -> Result<(), TrackErr> {
         }
         Ok(())
     });
-    core.run(f2).expect("Core failed");
+    rt.spawn(f2);
+    rt.run().expect("Failed runtime");
     Ok(())
 }
 
-fn timeout(tx: Sender<Event>, handle: &Handle, id: u32) -> impl Future<Item = (), Error = ()> {
-    Timeout::new(Duration::from_secs(TIMEOUT_DELAY), &handle)
-        .expect("Timeout failed")
-        .and_then(move |_| {
-            tx.send(Event::Tick(id))
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-        }).map(|_| ())
+fn timeout(tx: Sender<Event>, id: u32) -> impl Future<Item = (), Error = ()> {
+    Delay::new(Instant::now() + Duration::from_secs(TIMEOUT_DELAY))
+        .map(|_| ())
+        .map_err(|_| ())
+        .and_then(move |_| tx.send(Event::Tick(id)).map_err(|_| ()))
+        .map(|_| ())
         .map_err(|_| ())
 }
 
-fn sigint(tx: Sender<Event>, h: &Handle) -> impl Future<Item = (), Error = ()> {
-    tokio_signal::ctrl_c(&h)
+fn sigint(tx: Sender<Event>) -> impl Future<Item = (), Error = ()> {
+    tokio_signal::ctrl_c()
         .flatten_stream()
         .for_each(move |_| {
-            let tx = tx.clone();
-            tx.send(Event::Flush)
+            tx.clone()
+                .send(Event::Flush)
                 .map(|_| ())
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-        }).map_err(|_| ())
+        })
+        .map_err(|_| ())
 }
 
 use std::{fs, path::Path};
@@ -142,7 +143,8 @@ fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
                 h.to_str()
                     .map(|g| g.starts_with(LOG_BASE_NAME))
                     .unwrap_or(false)
-            }).unwrap_or(false)
+            })
+            .unwrap_or(false)
         {
             let modif = path.metadata()?.modified()?.elapsed()?.as_secs();
             files.push((path, modif));
