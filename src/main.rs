@@ -93,7 +93,6 @@ fn main() -> Result<(), TrackErr> {
 
 fn timeout(tx: Sender<Event>, id: u32) -> impl Future<Item = (), Error = ()> {
     Delay::new(Instant::now() + Duration::from_secs(TIMEOUT_DELAY))
-        .map(|_| ())
         .map_err(|_| ())
         .and_then(move |_| tx.send(Event::Tick(id)).map_err(|_| ()))
         .map(|_| ())
@@ -143,7 +142,7 @@ fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
     }
 
     if files.len() >= num {
-        files.sort_by(|a, b| (a.1).cmp(&b.1));
+        files.sort_by(|&(_, a), &(_, ref b)| a.cmp(b));
 
         if let Some((last, _)) = files.first() {
             if let Some(Some(Ok(n))) = last
