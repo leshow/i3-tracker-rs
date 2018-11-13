@@ -3,14 +3,12 @@ use crate::{
     log::{Event, I3Log},
 };
 
-use {
-    futures::{sync::mpsc::Sender, Future, Sink},
-    i3ipc::{
-        event::{inner::WindowChange, Event as WinEvent},
-        I3EventListener, Subscription,
-    },
-    xcb,
+use futures::{sync::mpsc::Sender, Future, Sink};
+use i3ipc::{
+    event::{inner::WindowChange, Event as WinEvent},
+    I3EventListener, Subscription,
 };
+use xcb;
 
 pub fn listen_loop(tx: &Sender<Event>) -> Result<(), TrackErr> {
     let mut i3_listener = I3EventListener::connect()?;
@@ -54,10 +52,8 @@ pub fn listen_loop(tx: &Sender<Event>) -> Result<(), TrackErr> {
     Ok(())
 }
 
-/*
- * pulled from:
- * https://stackoverflow.com/questions/44833160/how-do-i-get-the-x-window-class-given-a-window-id-with-rust-xcb
- */
+// pulled from:
+// https://stackoverflow.com/questions/44833160/how-do-i-get-the-x-window-class-given-a-window-id-with-rust-xcb
 pub fn get_class(conn: &xcb::Connection, window_id: u32) -> String {
     let long_length: u32 = 8;
     let mut long_offset: u32 = 0;

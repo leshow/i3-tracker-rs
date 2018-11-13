@@ -1,8 +1,8 @@
-use {
-    csv, i3ipc,
-    std::{error::Error, fmt, io, time},
-    xcb, xdg,
-};
+use csv;
+use i3ipc;
+use std::{error::Error, fmt, io, time};
+use xcb;
+use xdg;
 
 #[derive(Debug)]
 pub enum TrackErr {
@@ -69,6 +69,7 @@ impl Error for TrackErr {
             TrackErr::TimeErr(ref e) => e.description(),
         }
     }
+
     fn cause(&self) -> Option<&Error> {
         match *self {
             TrackErr::Io(ref e) => Some(e),

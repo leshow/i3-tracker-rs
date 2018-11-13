@@ -1,27 +1,25 @@
-#![feature(await_macro, async_await, futures_api)]
-
 #[macro_use]
 extern crate serde_derive;
 
 mod error;
+mod i3;
 mod log;
-mod win;
 
 pub(crate) use crate::{
     error::TrackErr,
     log::{Event, I3Log, Log},
 };
-
-use {
-    futures::prelude::*,
-    futures::sync::mpsc::{self, Sender},
-    std::{
-        io, thread,
-        time::{Duration, Instant},
-    },
-    tokio::runtime::current_thread::Handle,
-    tokio::timer::Delay,
+use futures::{
+    prelude::*,
+    sync::mpsc::{self, Sender},
 };
+use std::{
+    fs, io,
+    path::Path,
+    thread,
+    time::{Duration, Instant},
+};
+use tokio::{runtime::current_thread::Handle, timer::Delay};
 
 const TIMEOUT_DELAY: u64 = 10;
 const LOG_LIMIT: usize = 10;
@@ -40,8 +38,10 @@ fn main() -> Result<(), TrackErr> {
     // spawn listen loop
     {
         let tx = tx.clone();
-        thread::spawn(move || {
-            win::listen_loop(&tx).unwrap();
+        thread::spawn(move || loop {
+            if i3::listen_loop(&tx).is_err() {
+                continue;
+            }
         });
     }
     let mut writer = log::writer(&log_path)?;
@@ -110,8 +110,6 @@ fn sigint(tx: Sender<Event>) -> impl Future<Item = (), Error = ()> {
         })
         .map_err(|_| ())
 }
-
-use std::{fs, path::Path};
 
 fn setup_log() -> Result<impl AsRef<Path>, TrackErr> {
     // get data dir

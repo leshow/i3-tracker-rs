@@ -1,18 +1,15 @@
-use crate::error::TrackErr;
-use crate::win;
+use crate::{error::TrackErr, i3};
 
-use {
-    chrono::{DateTime, Local},
-    csv::{Reader, Writer, WriterBuilder},
-    fs2::FileExt,
-    i3ipc::event::WindowEventInfo,
-    std::{
-        fs::{File, OpenOptions},
-        io::{self, ErrorKind},
-        path::Path,
-    },
-    xcb,
+use chrono::{DateTime, Local};
+use csv::{Reader, Writer, WriterBuilder};
+use fs2::FileExt;
+use i3ipc::event::WindowEventInfo;
+use std::{
+    fs::{File, OpenOptions},
+    io::{self, ErrorKind},
+    path::Path,
 };
+use xcb;
 
 pub enum Event {
     I3(I3Log),
@@ -33,7 +30,7 @@ impl I3Log {
         I3Log {
             start_time: Local::now(),
             window_id,
-            window_class: win::get_class(xorg_conn, window_id as u32),
+            window_class: i3::get_class(xorg_conn, window_id as u32),
             window_title: e
                 .container
                 .name
