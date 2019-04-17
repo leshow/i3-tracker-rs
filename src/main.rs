@@ -16,7 +16,6 @@ use futures::{
 use std::{
     fs, io,
     path::Path,
-    thread,
     time::{Duration, Instant},
 };
 use tokio::{runtime::current_thread::Handle, timer::Delay};
@@ -38,11 +37,9 @@ fn main() -> Result<(), TrackErr> {
     // spawn listen loop
     {
         let tx = tx.clone();
-        thread::spawn(move || loop {
-            if i3::listen_loop(&tx).is_err() {
-                continue;
-            }
-        });
+        if let Err(e) = i3::listen_loop(tx, rt.handle()) {
+            eprintln!("{:?}", e);
+        }
     }
     let mut writer = log::writer(&log_path)?;
     let mut prev_i3log: Option<I3Log> = None;

@@ -3,12 +3,12 @@ use crate::{error::TrackErr, i3};
 use chrono::{DateTime, Local};
 use csv::{Reader, Writer, WriterBuilder};
 use fs2::FileExt;
-use i3ipc::event::WindowEventInfo;
 use std::{
     fs::{File, OpenOptions},
     io::{self, ErrorKind},
     path::Path,
 };
+use tokio_i3ipc::event::WindowData;
 use xcb;
 
 pub enum Event {
@@ -26,7 +26,7 @@ pub struct I3Log {
 }
 
 impl I3Log {
-    pub fn from_i3(window_id: u32, xorg_conn: &xcb::Connection, e: &WindowEventInfo) -> I3Log {
+    pub fn from_i3(window_id: u32, xorg_conn: &xcb::Connection, e: &WindowData) -> I3Log {
         I3Log {
             start_time: Local::now(),
             window_id,
