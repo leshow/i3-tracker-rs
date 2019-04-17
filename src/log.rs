@@ -11,13 +11,14 @@ use std::{
 use tokio_i3ipc::event::WindowData;
 use xcb;
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum Event {
     I3(I3Log),
     Tick(u32),
     Flush,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct I3Log {
     pub start_time: DateTime<Local>,
     pub window_id: u32,
@@ -49,7 +50,7 @@ impl I3Log {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Log {
     pub id: u32,
     pub start_time: String,
