@@ -1,9 +1,10 @@
 use crate::{
     error::TrackErr,
-    log::{Event, I3Log},
+    i3log::{Event, I3Log},
 };
 
 use futures::{stream::Stream, sync::mpsc::Sender, Future, Sink};
+use log::{error, info};
 use tokio::{codec::FramedRead, runtime::current_thread::Handle};
 use tokio_i3ipc::{
     codec::EventCodec,
@@ -22,8 +23,10 @@ pub fn listen_loop(tx: Sender<Event>, rt: Handle) -> Result<(), TrackErr> {
             let frame = FramedRead::new(stream, EventCodec);
             let sender = frame
                 .for_each(move |evt: event::Event| {
+                    info!("Received: {:#?}", &evt);
                     let tx = tx.clone();
                     if let event::Event::Window(e) = evt {
+                        info!("Window event type: {:#?}", &e.change);
                         let window_id = e.container.id;
                         match e.change {
                             WindowChange::New => {
@@ -42,6 +45,7 @@ pub fn listen_loop(tx: Sender<Event>, rt: Handle) -> Result<(), TrackErr> {
                         match e.change {
                             WindowChange::Focus | WindowChange::Title => {
                                 let log = I3Log::from_i3(window_id as u32, &xorg_conn, &e);
+                                info!("Window change, send log event: {:#?}", log);
                                 tokio::spawn(tx.send(Event::I3(log)).map(|_| ()).map_err(|_| ()));
                             }
                             _ => {}
@@ -49,13 +53,13 @@ pub fn listen_loop(tx: Sender<Event>, rt: Handle) -> Result<(), TrackErr> {
                     }
                     futures::future::ok(())
                 })
-                .map_err(|e| eprintln!("{:?}", e));
+                .map_err(|e| error!("{:?}", e));
             tokio::spawn(sender);
             Ok(())
         })
         .map(|_| ())
-        .map_err(|e| eprintln!("{:?}", e));
-    rt.spawn(fut);
+        .map_err(|e| error!("{:?}", e));
+    rt.spawn(fut).expect("Failed to run listen future");
     Ok(())
 }
 

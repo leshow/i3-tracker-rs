@@ -6,14 +6,16 @@ edition = "2018"
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
-csv = "1.0.2"
+csv = "1.0.7"
 xcb = { version = "0.8", features = ["thread"] }
 xdg = "2.1"
 fs2 = "0.4"
 serde_derive = "1.0"
 serde = "1.0"
+log = "0.4"
+env_logger = "0.6"
 futures = "0.1"
 tokio = "0.1.18"
 tokio-signal = "0.2.7"
-tokio-i3ipc =  "0.3.0" 
+tokio-i3ipc =  "0.5.0" 
 

@@ -1,13 +1,15 @@
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate log;
 
 mod error;
 mod i3;
-mod log;
+mod i3log;
 
 pub(crate) use crate::{
     error::TrackErr,
-    log::{Event, I3Log, Log},
+    i3log::{Event, I3Log, Log},
 };
 use futures::{
     prelude::*,
@@ -25,10 +27,13 @@ const LOG_LIMIT: usize = 10;
 const LOG_BASE_NAME: &str = "i3tracker";
 
 fn main() -> Result<(), TrackErr> {
+    env_logger::init();
     let log_path = setup_log()?;
     // log interval
+    info!("Creating listen channel");
     let (tx, rx) = mpsc::channel(50);
-    let mut next_id = log::initial_event_id(&log_path);
+    let mut next_id = i3log::initial_event_id(&log_path);
+    info!("Next id from logs is {:?}", next_id);
 
     // catch exit & write to log
     let mut rt = tokio::runtime::current_thread::Runtime::new().expect("Failed building runtime");
@@ -38,10 +43,10 @@ fn main() -> Result<(), TrackErr> {
     {
         let tx = tx.clone();
         if let Err(e) = i3::listen_loop(tx, rt.handle()) {
-            eprintln!("{:?}", e);
+            error!("{:?}", e);
         }
     }
-    let mut writer = log::writer(&log_path)?;
+    let mut writer = i3log::writer(&log_path)?;
     let mut prev_i3log: Option<I3Log> = None;
     // consume events
     let handle: Handle = rt.handle();
@@ -56,7 +61,9 @@ fn main() -> Result<(), TrackErr> {
                     next_id += 1;
                 }
 
-                handle.spawn(timeout(tx.clone(), next_id));
+                handle
+                    .spawn(timeout(tx.clone(), next_id))
+                    .expect("Spawn timeout failed");
                 prev_i3log = Some(e);
             }
             Event::Tick(id) => {
@@ -64,13 +71,16 @@ fn main() -> Result<(), TrackErr> {
                     return Ok(());
                 }
                 if let Some(ref prev) = prev_i3log {
+                    info!("Tick - writing log");
                     Log::new(next_id, prev)
                         .write(&mut writer)
                         .expect("write failed!");
                     next_id += 1;
                     prev_i3log = Some(prev.new_start());
                 }
-                handle.spawn(timeout(tx.clone(), next_id));
+                handle
+                    .spawn(timeout(tx.clone(), next_id))
+                    .expect("Spawn timeout failed");
             }
             Event::Flush => {
                 if let Some(ref prev) = prev_i3log {
@@ -111,7 +121,10 @@ fn sigint(tx: Sender<Event>) -> impl Future<Item = (), Error = ()> {
 fn setup_log() -> Result<impl AsRef<Path>, TrackErr> {
     // get data dir
     let xdg_dir = xdg::BaseDirectories::with_prefix(LOG_BASE_NAME)?;
-    let cur_log = rotate(xdg_dir.get_data_home().as_path(), LOG_LIMIT)?;
+    let home = xdg_dir.get_data_home();
+    info!("Setting up log in {:?}", home.as_path());
+    let cur_log = rotate(home.as_path(), LOG_LIMIT)?;
+    info!("Current log is {:?}", cur_log);
 
     Ok(xdg_dir.place_data_file(format!("{}{}.{}", LOG_BASE_NAME, ".log", cur_log))?)
 }
@@ -122,15 +135,15 @@ fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path
+        let found_log = path
             .file_stem()
             .map(|h| {
                 h.to_str()
                     .map(|g| g.starts_with(LOG_BASE_NAME))
                     .unwrap_or(false)
             })
-            .unwrap_or(false)
-        {
+            .unwrap_or(false);
+        if found_log {
             let modif = path.metadata()?.modified()?.elapsed()?.as_secs();
             files.push((path, modif));
         }
