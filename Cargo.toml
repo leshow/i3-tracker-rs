@@ -15,5 +15,5 @@ serde = "1.0"
 futures = "0.1"
 tokio = "0.1.18"
 tokio-signal = "0.2.7"
-tokio-i3ipc = { path = "../tokio-i3ipc", version = "0.3.0" }
+tokio-i3ipc =  "0.3.0" 
 

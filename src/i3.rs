@@ -8,7 +8,7 @@ use tokio::{codec::FramedRead, runtime::current_thread::Handle};
 use tokio_i3ipc::{
     codec::EventCodec,
     event::{self, Subscribe, WindowChange},
-    send_sub_fut, Connect, I3,
+    subscribe_future, Connect, I3,
 };
 use xcb;
 
@@ -17,7 +17,7 @@ pub fn listen_loop(tx: Sender<Event>, rt: Handle) -> Result<(), TrackErr> {
     let mut prev_new_window_id = None;
 
     let fut = I3::connect()?
-        .and_then(|stream| send_sub_fut(stream, &[Subscribe::Window]))
+        .and_then(|stream| subscribe_future(stream, &[Subscribe::Window]))
         .and_then(move |(stream, _)| {
             let frame = FramedRead::new(stream, EventCodec);
             let sender = frame
