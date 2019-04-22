@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
 csv = "1.0.7"
-xcb = { version = "0.8", features = ["thread"] }
 xdg = "2.1"
 fs2 = "0.4"
 serde_derive = "1.0"

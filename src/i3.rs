@@ -11,11 +11,9 @@ use tokio_i3ipc::{
     event::{self, Subscribe, WindowChange},
     subscribe_future, Connect, I3,
 };
-use xcb;
 
 pub fn listen_loop(tx: Sender<Event>, rt: Handle) -> Result<(), TrackErr> {
-    let (xorg_conn, _) = xcb::Connection::connect(None)?;
-    let mut prev_new_window_id = None;
+    let mut prev_new_id = None;
 
     let fut = I3::connect()?
         .and_then(|stream| subscribe_future(stream, &[Subscribe::Window]))
@@ -27,24 +25,24 @@ pub fn listen_loop(tx: Sender<Event>, rt: Handle) -> Result<(), TrackErr> {
                     let tx = tx.clone();
                     if let event::Event::Window(e) = evt {
                         info!("Window event type: {:#?}", &e.change);
-                        let window_id = e.container.id;
+                        let id = e.container.id;
                         match e.change {
                             WindowChange::New => {
-                                prev_new_window_id = Some(window_id);
+                                prev_new_id = Some(id);
                             }
                             WindowChange::Focus => {
-                                if let Some(prev_window_id) = prev_new_window_id {
-                                    if prev_window_id == window_id {
-                                        prev_new_window_id = None;
+                                if let Some(prev_id) = prev_new_id {
+                                    if prev_id == id {
+                                        prev_new_id = None;
                                     }
                                 }
                             }
                             _ => {}
                         };
-                        prev_new_window_id = None;
+                        prev_new_id = None;
                         match e.change {
                             WindowChange::Focus | WindowChange::Title => {
-                                let log = I3Log::from_i3(window_id as u32, &xorg_conn, &e);
+                                let log = I3Log::from_i3(id, &e.container);
                                 info!("Window change, send log event: {:#?}", log);
                                 tokio::spawn(tx.send(Event::I3(log)).map(|_| ()).map_err(|_| ()));
                             }
@@ -61,42 +59,4 @@ pub fn listen_loop(tx: Sender<Event>, rt: Handle) -> Result<(), TrackErr> {
         .map_err(|e| error!("{:?}", e));
     rt.spawn(fut).expect("Failed to run listen future");
     Ok(())
-}
-
-// pulled from:
-// https://stackoverflow.com/questions/44833160/how-do-i-get-the-x-window-class-given-a-window-id-with-rust-xcb
-pub fn get_class(conn: &xcb::Connection, window_id: u32) -> String {
-    let long_length: u32 = 8;
-    let mut long_offset: u32 = 0;
-    let mut buf = Vec::new();
-    loop {
-        let cookie = xcb::xproto::get_property(
-            conn,
-            false,
-            window_id,
-            xcb::xproto::ATOM_WM_CLASS,
-            xcb::xproto::ATOM_STRING,
-            long_offset,
-            long_length,
-        );
-        match cookie.get_reply() {
-            Ok(reply) => {
-                let value: &[u8] = reply.value();
-                buf.extend_from_slice(value);
-                match reply.bytes_after() {
-                    0 => break,
-                    _ => {
-                        let len = reply.value_len();
-                        long_offset += len / 4;
-                    }
-                }
-            }
-            Err(_) => {
-                break;
-            }
-        }
-    }
-    let result = String::from_utf8(buf).unwrap();
-    let results: Vec<_> = result.split('\0').collect();
-    results[0].to_string()
 }
