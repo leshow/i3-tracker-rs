@@ -12,46 +12,50 @@ pub(crate) use crate::{
     i3log::{Event, I3Log, Log},
 };
 use futures::{
+    channel::mpsc::{self, Sender},
     prelude::*,
-    sync::mpsc::{self, Sender},
+    stream::StreamExt,
 };
 use std::{
     fs, io,
     path::Path,
     time::{Duration, Instant},
 };
-use tokio::{runtime::current_thread::Handle, timer::Delay};
+use tokio::timer::Delay;
+// use tokio_net::signal::ctrl_c;
 
 const TIMEOUT_DELAY: u64 = 10;
 const LOG_LIMIT: usize = 10;
 const LOG_BASE_NAME: &str = "i3tracker";
 
-fn main() -> Result<(), TrackErr> {
+#[tokio::main]
+async fn main() -> Result<(), TrackErr> {
     env_logger::init();
     let log_path = setup_log()?;
     // log interval
     info!("Creating listen channel");
-    let (tx, rx) = mpsc::channel(50);
+    let (tx, mut rx) = mpsc::channel(50);
     let mut next_id = i3log::initial_event_id(&log_path);
     info!("Next id from logs is {:?}", next_id);
 
     // catch exit & write to log
-    let mut rt = tokio::runtime::current_thread::Runtime::new().expect("Failed building runtime");
-    rt.spawn(sigint(tx.clone()));
+    // tokio::spawn(async move {
+    //     sigint(tx.clone()).await;
+    // });
 
     // spawn listen loop
     {
         let tx = tx.clone();
-        if let Err(e) = i3::listen_loop(tx, rt.handle()) {
-            error!("{:?}", e);
-        }
+        tokio::spawn(async move {
+            i3::listen_loop(tx).await;
+        });
     }
+
     let mut writer = i3log::writer(&log_path)?;
     let mut prev_i3log: Option<I3Log> = None;
     // consume events
-    let handle: Handle = rt.handle();
 
-    let f2 = rx.for_each(move |event| {
+    while let Some(event) = rx.next().await {
         match event {
             Event::I3(e) => {
                 if let Some(ref prev) = prev_i3log {
@@ -61,9 +65,10 @@ fn main() -> Result<(), TrackErr> {
                     next_id += 1;
                 }
 
-                handle
-                    .spawn(timeout(tx.clone(), next_id))
-                    .expect("Spawn timeout failed");
+                let tx = tx.clone();
+                tokio::spawn(async move {
+                    timeout(tx, next_id).await.expect("Timeout failed");
+                });
                 prev_i3log = Some(e);
             }
             Event::Tick(id) => {
@@ -78,9 +83,10 @@ fn main() -> Result<(), TrackErr> {
                     next_id += 1;
                     prev_i3log = Some(prev.new_start());
                 }
-                handle
-                    .spawn(timeout(tx.clone(), next_id))
-                    .expect("Spawn timeout failed");
+                let tx = tx.clone();
+                tokio::spawn(async move {
+                    timeout(tx, id).await.expect("Timeout failed");
+                });
             }
             Event::Flush => {
                 if let Some(ref prev) = prev_i3log {
@@ -91,32 +97,25 @@ fn main() -> Result<(), TrackErr> {
                 std::process::exit(0);
             }
         }
-        Ok(())
-    });
-    rt.spawn(f2);
-    rt.run().expect("Failed runtime");
+    }
     Ok(())
 }
 
-fn timeout(tx: Sender<Event>, id: u32) -> impl Future<Item = (), Error = ()> {
-    Delay::new(Instant::now() + Duration::from_secs(TIMEOUT_DELAY))
-        .map_err(|_| ())
-        .and_then(move |_| tx.send(Event::Tick(id)).map_err(|_| ()))
-        .map(|_| ())
-        .map_err(|_| ())
+async fn timeout(mut tx: Sender<Event>, id: u32) -> io::Result<()> {
+    Delay::new(Instant::now() + Duration::from_secs(TIMEOUT_DELAY)).await;
+    tx.send(Event::Tick(id))
+        .await
+        .map_err(|e| io::Error::new(io::ErrorKind::BrokenPipe, e.to_string()))?;
+    Ok(())
 }
 
-fn sigint(tx: Sender<Event>) -> impl Future<Item = (), Error = ()> {
-    tokio_signal::ctrl_c()
-        .flatten_stream()
-        .for_each(move |_| {
-            tx.clone()
-                .send(Event::Flush)
-                .map(|_| ())
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-        })
-        .map_err(|_| ())
-}
+// async fn sigint(tx: Sender<Event>) -> io::Result<()> {
+//     let ctrl_c = ctrl_c()?;
+//     while let Some(ev) = ctrl_c.next().await {
+//         tx.clone().send(Event::Flush).await;
+//     }
+//     Ok(())
+// }
 
 fn setup_log() -> Result<impl AsRef<Path>, TrackErr> {
     // get data dir

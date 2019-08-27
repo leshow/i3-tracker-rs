@@ -44,7 +44,7 @@ impl Error for TrackErr {
         }
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         match *self {
             TrackErr::Io(ref e) => Some(e),
             TrackErr::Csv(ref e) => Some(e),
