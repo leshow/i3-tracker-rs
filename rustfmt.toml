@@ -1,3 +1,6 @@
+reorder_imports = true
+reorder_imported_names = true
+reorder_imports_in_group = true
 condense_wildcard_suffixes = true
 format_string = true
 merge_imports = true
