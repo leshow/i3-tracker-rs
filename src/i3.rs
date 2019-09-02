@@ -35,7 +35,6 @@ pub async fn listen_loop(tx: Sender<Event>) -> Result<(), TrackErr> {
                 }
                 _ => {}
             };
-            prev_new_id = None;
             match e.change {
                 WindowChange::Focus | WindowChange::Title => {
                     let log = I3Log::from_i3(id, &e.container);
