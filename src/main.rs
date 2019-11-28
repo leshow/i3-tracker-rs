@@ -1,8 +1,3 @@
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate log;
-
 mod error;
 mod i3;
 mod i3log;
@@ -15,6 +10,7 @@ use futures::{
     channel::mpsc::{self, Sender},
     prelude::*,
 };
+use log::info;
 use std::{io, path::Path};
 use tokio::{
     fs,
