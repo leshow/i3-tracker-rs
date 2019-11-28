@@ -1,4 +1,3 @@
-#![feature(async_await)]
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
@@ -16,29 +15,31 @@ use futures::{
     channel::mpsc::{self, Sender},
     prelude::*,
 };
-use std::{
-    fs, io,
-    path::Path,
-    time::{Duration, Instant},
+use std::{io, path::Path};
+use tokio::{
+    fs,
+    signal::ctrl_c,
+    time::{self, Duration, Instant},
 };
-use tokio::timer::Delay;
-// use tokio_net::signal::ctrl_c;
 
 const TIMEOUT_DELAY: u64 = 10;
 const LOG_LIMIT: usize = 10;
 const LOG_BASE_NAME: &str = "i3tracker";
 
-#[tokio::main]
+#[tokio::main(basic_scheduler)]
 async fn main() -> Result<(), TrackErr> {
     env_logger::init();
-    let log_path = setup_log()?;
+    let log_path = setup_log().await?;
     // log interval
     info!("Creating listen channel");
     let (tx, mut rx) = mpsc::channel(50);
     // catch exit & write to log
-    // tokio::spawn(async move {
-    //     sigint(tx.clone()).await;
-    // });
+    {
+        let tx = tx.clone();
+        tokio::spawn(async move {
+            sigint(tx).await.expect("Failed to get SIGINT");
+        });
+    }
 
     // spawn listen loop
     {
@@ -100,36 +101,38 @@ async fn main() -> Result<(), TrackErr> {
 }
 
 async fn timeout(mut tx: Sender<Event>, id: u32) -> io::Result<()> {
-    Delay::new(Instant::now() + Duration::from_secs(TIMEOUT_DELAY)).await;
+    time::delay_until(Instant::now() + Duration::from_secs(TIMEOUT_DELAY)).await;
     tx.send(Event::Tick(id))
         .await
         .map_err(|e| io::Error::new(io::ErrorKind::BrokenPipe, e.to_string()))?;
     Ok(())
 }
 
-// async fn sigint(tx: Sender<Event>) -> io::Result<()> {
-//     let ctrl_c = ctrl_c()?;
-//     while let Some(ev) = ctrl_c.next().await {
-//         tx.clone().send(Event::Flush).await;
-//     }
-//     Ok(())
-// }
+async fn sigint(tx: Sender<Event>) -> io::Result<()> {
+    ctrl_c().await?;
+    tx.clone()
+        .send(Event::Flush)
+        .await
+        .map_err(|e| io::Error::new(io::ErrorKind::Interrupted, e.to_string()))?;
+    Ok(())
+}
 
-fn setup_log() -> Result<impl AsRef<Path>, TrackErr> {
+async fn setup_log() -> Result<impl AsRef<Path>, TrackErr> {
     // get data dir
     let xdg_dir = xdg::BaseDirectories::with_prefix(LOG_BASE_NAME)?;
     let home = xdg_dir.get_data_home();
     info!("Setting up log in {:?}", home.as_path());
-    let cur_log = rotate(home.as_path(), LOG_LIMIT)?;
+    let cur_log = rotate(home.as_path(), LOG_LIMIT).await?;
     info!("Current log is {:?}", cur_log);
 
     Ok(xdg_dir.place_data_file(format!("{}{}.{}", LOG_BASE_NAME, ".log", cur_log))?)
 }
 
-fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
+async fn rotate<P: AsRef<Path>>(dir: P, num: usize) -> Result<usize, TrackErr> {
     let mut files = Vec::new();
+    let mut readdir = fs::read_dir(dir.as_ref()).await?;
 
-    for entry in fs::read_dir(dir)? {
+    while let Some(entry) = readdir.next().await {
         let entry = entry?;
         let path = entry.path();
         let found_log = path
