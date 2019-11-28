@@ -117,6 +117,8 @@ async fn sigint(tx: Sender<Event>) -> io::Result<()> {
     Ok(())
 }
 
+// TODO: This function has a mix of async and sync fs operations that's not
+// great
 async fn setup_log() -> Result<impl AsRef<Path>, TrackErr> {
     // get data dir
     let xdg_dir = xdg::BaseDirectories::with_prefix(LOG_BASE_NAME)?;
